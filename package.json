@@ -1,0 +1,15 @@
+{
+  "name": "cipher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cipherClass.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RuckerGauge/Cipher.git"
+  },
+  "author": "John Rucker",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.528.0"
+  }
+}
