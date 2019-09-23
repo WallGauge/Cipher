@@ -51,9 +51,9 @@ class keyManager extends EventEmitter {
                 })
                 .then((data)=>{
                     this.dataEncryptionKey = data.Plaintext;
-                    this.emit('keyIsReady', this.dataEncryptionKey);
                     console.log('saving encrypted copy of data encryption key...');
                     this._saveItem({dataKey:data.CiphertextBlob});
+                    this.emit('keyIsReady', this.dataEncryptionKey);
                 })
                 .catch((err)=>{
                     console.log('Error Key Decryption Error or Issue creating new Master Key');
@@ -133,7 +133,7 @@ function generateDataKey(keyID) {
 
         kms.generateDataKey(params, (err, data) => {
             if (err) {
-				console.log('Error calling kms.generteDataKey:');
+				console.log('Error calling kms.generateDataKey:');
 				console.log(err);
                 reject(err);
             } else {
