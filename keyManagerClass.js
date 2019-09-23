@@ -37,7 +37,7 @@ class keyManager extends EventEmitter {
                     this.emit('keyIsReady', this.dataEncryptionKey);
                 })
                 .catch((err)=>{
-                    console.log('Error during the class constructor of keyManager');
+                    console.log('Error key Decryption Error form keyManager');
                     this.emit('Error', 'Key Decryption Error', err);
                 })
             } else {
@@ -56,7 +56,7 @@ class keyManager extends EventEmitter {
                     this._saveItem({dataKey:data.CiphertextBlob});
                 })
                 .catch((err)=>{
-                    console.log('Error during the class constructor of keyManager');
+                    console.log('Error Key Decryption Error or Issue creating new Master Key');
                     this.emit('Error', 'Key Decryption Error or Issue creating new Master Key', err);
                 });
             };
