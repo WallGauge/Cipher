@@ -28,7 +28,7 @@ class keyManager extends EventEmitter {
         super();
         this.dataEncryptionKey = null;
         this.masterKeyID = null;
-        this.region = awsRegion;
+        this._region = awsRegion;
         this._cmkFilePath = cmkFilePath;
         this._masterKeyObject = {};
         this._masterKeyParams = {
@@ -43,7 +43,7 @@ class keyManager extends EventEmitter {
             kms = new AWS.KMS({
                 accessKeyId: AWS.config.credentials.accessKeyId,            //credentials for your IAM user
                 secretAccessKey: AWS.config.credentials.secretAccessKey,    //credentials for your IAM user
-                region: this.region
+                region: this._region
             });
             console.log('Looking for Master Key File ' + this._cmkFilePath);
             if (fs.existsSync(this._cmkFilePath)){
