@@ -1,13 +1,34 @@
 const AWS =             require('aws-sdk');
 const fs =              require("fs");
 const EventEmitter =    require('events');
+
 var kms = {};
 
+/**
+ * This class is used to manage an data encryption key.  The key is encrypted with a Customer Master Key and managed by Amazon Web Services Key Management Service.
+ * This class looks for an encrypted “data encryption key” in a local file named cmk.json (default name).  
+ * If the cmk.json file is missing the class will use AWS to create a new customer master key and then a new data encryption key.  
+ * An encrypted version of the new data encryption key and the customer master key ID will be stored in the cmk.json file.  
+ * The CMK ID is used by AWS to decrypt the data encryption key and it is available in the this.dataEncryptionKey property. 
+ * The this.dataEncryptionKey key should never be stored or saved in the file system!
+ * 
+ * Emits:
+ *      this.emit('keyIsReady', this.dataEncryptionKey);  When the data encryption key has been decrypted and ready.
+ *      this.emit('Error', 'Key Decryption Error', err);  Emits various error in this format.
+ * 
+ * Notes:
+ * The aws-sdk will look for your IAM credentials in ~/.aws/credentials file.  For more information see the links in the README.MD
+ * 
+ * @param {string} newKeyDescription This text string is used in the Description field of the Amazon KMS Customer Managed Key when it is created
+ * @param {string} cmkFilePath This is an optional file path and name of the location to store the CMK ID and encryted key
+ * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
+ */
 class keyManager extends EventEmitter {
-    constructor(newKeyDescription = 'wgGDT1_MasterKey', cmkFilePath = __dirname + '/cmk.json'){
+    constructor(newKeyDescription = 'wgGDT1_MasterKey', cmkFilePath = __dirname + '/cmk.json', awsRegion = 'us-east-1'){
         super();
         this.dataEncryptionKey = null;
-        this.masterKeyID = null
+        this.masterKeyID = null;
+        this.region = awsRegion;
         this._cmkFilePath = cmkFilePath;
         this._masterKeyObject = {};
         this._masterKeyParams = {
@@ -22,7 +43,7 @@ class keyManager extends EventEmitter {
             kms = new AWS.KMS({
                 accessKeyId: AWS.config.credentials.accessKeyId,            //credentials for your IAM user
                 secretAccessKey: AWS.config.credentials.secretAccessKey,    //credentials for your IAM user
-                region: 'us-east-1'
+                region: this.region
             });
             console.log('Looking for Master Key File ' + this._cmkFilePath);
             if (fs.existsSync(this._cmkFilePath)){
