@@ -36,7 +36,6 @@ class encryption {
         const decrypted = decipher.update(text, 'binary', 'utf8') + decipher.final('utf8');
         return decrypted;
     };
-
 };
 
 module.exports = encryption;

@@ -1,8 +1,13 @@
-const KeyManger = require('./cipherClass.js').keyManager;
-const Crypto = require('./cipherClass.js').encryption;
+const KeyManger =       require('./cipherClass.js').keyManager;
+const Crypto =          require('./cipherClass.js').encryption;
+const fs =              require("fs");
+
+const testConfigInFilename = './sample_testConfig.json'
+const testConfigOutFilename = './sample_testConfig.encrypted'
+var testConfigIn = null;
 
 console.log('testMe is setting up keyMan...')
-const keyMan = new KeyManger('testMe.js requested key for testing');
+const keyMan = new KeyManger('testMe.js key for testing');
 var crypto = {};
 
 keyMan.on('keyIsReady', (key)=>{
@@ -19,6 +24,7 @@ keyMan.on('keyIsReady', (key)=>{
     console.log('Now lets decrypt and see if we get our orignal text:');
     var unencryptedText = crypto.decrypt(encryptedTextBuffer);
     console.dir('Decrypted  ->'+ unencryptedText +'<-');
+    testFileEncrypting();
 });
 
 keyMan.on('Error', (errDesc, errDetail)=>{
@@ -35,3 +41,23 @@ setTimeout(()=>{
 },90000);
 
 console.log('testMe is free to do other things...')
+
+
+function testFileEncrypting(){
+    console.log('test File Encryption')
+    if (fs.existsSync(testConfigInFilename)){
+        testConfigIn = JSON.parse(fs.readFileSync(testConfigInFilename))
+        console.log('this is a test object from ' + testConfigInFilename);
+        console.dir(testConfigIn, {depth:null});
+        
+        var encryptedFileBuffer = crypto.encrypt(JSON.stringify(testConfigIn));
+        console.log('now lets write this buffer to a file');
+        fs.writeFileSync(testConfigOutFilename, encryptedFileBuffer);
+        
+        console.log('Done. Lets read the encrypted file and decrypt it.');
+        var encryptedFileContents = fs.readFileSync(testConfigOutFilename, 'utf8');
+        var decryptedFileContents = crypto.decrypt(encryptedFileContents);
+        console.log('decryted file contents:');
+        console.dir(JSON.parse(decryptedFileContents),{depth:null});
+    };
+}
