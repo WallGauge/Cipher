@@ -7,17 +7,18 @@ const testConfigOutFilename = './sample_testConfig.encrypted'
 var testConfigIn = null;
 
 console.log('testMe is setting up keyMan...')
-const keyMan = new KeyManger('testMe.js key for testing');
+const keyMan = new KeyManger(['b10ec20c-262f-4c80-894c-e8371dd73794','ef1c55a2-1808-450c-824a-62556d46b7b5']);
 var crypto = {};
 
-keyMan.on('keyIsReady', (key)=>{
-    console.log('\nThe key I can use for encrypting data is ' + key.toString('hex'));
+keyMan.on('keyIsReady', (keyObj)=>{
+    var keys = Object.keys(keyObj);
+    console.log('\nKey ID '+ keys[0] +' is ready for encyption and and the data encyptyion key is ' + keyObj[keys[0]].toString('hex'));
     console.log('This "data key" is never stored localy.  Only an encrypted version is stored localy.');
     console.log('The encrypted data key is decrypted by Amazon Key Mangement services.');
 
 
     console.log('\nNow that we have a key lets use it to encrypt something.  Setting up encryption class.');
-    crypto = new Crypto(key);
+    crypto = new Crypto(keyObj[keys[0]]);
     var textToEcrypte = "Here are the launch codes (12345) make sure POTUS doesn't see them!"
     console.log('Encrypting ->'+ textToEcrypte +'<-');
     var encryptedTextBuffer = crypto.encrypt(textToEcrypte);
@@ -33,12 +34,13 @@ keyMan.on('Error', (errDesc, errDetail)=>{
 });
 
 setTimeout(()=>{
-    if (keyMan.dataEncryptionKey == null){
+    if (keyMan.dataEncryptionKeyObj == {}){
         console.log('Data encryption key not set.  Encryption not possible.');
     } else {
-        console.log('\ntestMe:  After 90 seconds the data Encryption Key = ' + keyMan.dataEncryptionKey.toString('hex'));
+        console.log('\ntestMe:  After 15 seconds the data Encryption Key object follows:');
+        console.dir(keyMan.dataEncryptionKeyObj, {depth:null});
     };
-},90000);
+},15000);
 
 console.log('testMe is free to do other things...')
 
