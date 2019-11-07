@@ -2,6 +2,7 @@ const AWS =             require('aws-sdk');
 const fs =              require("fs");
 const EventEmitter =    require('events');
 
+var creds = {};
 var kms = {};
 
 /**
@@ -16,17 +17,16 @@ var kms = {};
  *      this.emit('keyIsReady', this.dataEncryptionKeyObj);  When a data encryption key has been decrypted and ready.
  *      this.emit('Error', 'Key Decryption Error', err);  Emits various errors in this format.
  * 
- * Notes:
- * The aws-sdk will look for your IAM credentials in ~/.aws/credentials file.  For more information see the links in the README.MD
- * 
  * @param {string} cmkIDs This text string array must have a list of customer master keys to use for encryption 
+ * @param {string} CredentialsFile File location of the AWS IMA credentials in JSON format 
  * @param {string} cmkFilePath This is an optional file path and name of the location to store the CMK ID and encryted key
  * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
  */
 class keyManager extends EventEmitter {
-    constructor(cmkIDs = ['',''], cmkFilePath = __dirname + '/cmk.json', awsRegion = 'us-east-1'){
+    constructor(cmkIDs = ['',''], CredentialsFile =  __dirname + '/awsConfig.json', cmkFilePath = __dirname + '/cmk.json',  awsRegion = 'us-east-1'){
         super();
         this.dataEncryptionKeyObj = {};
+        this._credentialsFile = CredentialsFile
         this._cmkIdArray = cmkIDs;
         this._region = awsRegion;
         this._cmkFilePath = cmkFilePath;
@@ -36,15 +36,14 @@ class keyManager extends EventEmitter {
             KeyUsage: 'ENCRYPT_DECRYPT',
             Origin: 'AWS_KMS'
         };
-        checkForCredentials()
+        creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
+        checkForCredentials(this._credentialsFile)
         .then(()=>{
-            console.log('keyMangerClass found Amazon Web Service credentials, setting up Key Management Service object...');
             kms = new AWS.KMS({
-                accessKeyId: AWS.config.credentials.accessKeyId,            //credentials for your IAM user
-                secretAccessKey: AWS.config.credentials.secretAccessKey,    //credentials for your IAM user
+                accessKeyId: creds.accessKeyId,            //credentials for your IAM user
+                secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
                 region: this._region
             });
-            console.log('Looking for Master Key File ' + this._cmkFilePath);
             if (fs.existsSync(this._cmkFilePath)){
                 this._masterKeyObject = JSON.parse(fs.readFileSync(this._cmkFilePath));
                 var cmkList = Object.keys(this._masterKeyObject);
@@ -97,10 +96,11 @@ class keyManager extends EventEmitter {
             };
         })
         .catch((err)=>{
-            console.log('ERROR keyMangerClass can not read AWS credentials! Check ~/.aws/credentials file.')
-            console.log(err);
-            this.emit('Error', 'keyMangerClass can not read AWS credentials! Check ~/.aws/credentials file.', err);
+            console.log('Error: keyMangerClass error checking AWS credentials: ' + err);
+            console.log('Check credentilas file: ' + this._credentialsFile);
+            this.emit('Error', 'keyMangerClass can not read AWS credentials! Check ' + this._credentialsFile + ' err: ' + err);
         });
+        
     };
 
     /** Saves custom config items to the config file located in _masterKeyID Path 
@@ -130,14 +130,13 @@ class keyManager extends EventEmitter {
     };
 };
 
-function checkForCredentials(){
-    console.log('keyMangerClass is checking for AWS Credentials...');
+function checkForCredentials(fileName){
     return new Promise((resolve, reject)=>{
-        AWS.config.getCredentials(function(err) {
-            if (err){
-                reject(err);
-            } else {
+        fs.exists(fileName,(exists)=>{
+            if(exists == true){
                 resolve();
+            } else {
+                reject('Credentials File not found');
             };
         });
     });
@@ -180,4 +179,4 @@ function decryptKey(encryptedKeyBuffer) {
     });
 };
 
-module.exports  = keyManager;
+module.exports = keyManager;

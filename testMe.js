@@ -1,15 +1,32 @@
+const AccMan =          require('./cipherClass.js').acctManager;
 const KeyManger =       require('./cipherClass.js').keyManager;
 const Crypto =          require('./cipherClass.js').encryption;
-const fs =              require("fs");
 
-const testConfigInFilename = './sample_testConfig.json'
-const testConfigOutFilename = './sample_testConfig.encrypted'
-var testConfigIn = null;
-
-console.log('testMe is setting up keyMan...')
-const keyMan = new KeyManger(['b10ec20c-262f-4c80-894c-e8371dd73794','ef1c55a2-1808-450c-824a-62556d46b7b5']);
+const credentialsFile = __dirname + '/awsConfig.json'
 var crypto = {};
+var maxKeyAgeInDays = 0.1;
 
+const accMan = new AccMan(credentialsFile);
+accMan.on('iamReady',()=>{
+    accMan.getAccessKeyAge()
+    .then((keyAgeIndays)=>{
+        if(keyAgeIndays < maxKeyAgeInDays){
+            console.log('The AWS IAM access key is less than '+ maxKeyAgeInDays +' days old. It should be rotated in ' + (maxKeyAgeInDays - keyAgeIndays).toString() + ' days.')
+        } else {
+            console.log('Key is '+ keyAgeIndays +' days old, it needs to be rotated. Starting key rotation process...');
+            accMan.rotateAccessKey();
+        };
+    })
+    .catch((err)=>{
+        console.log('Error in checking if AWS IAM access key needs to be replaced.  Error = ' + err)
+    });
+});
+
+accMan.on('iamCredentialsUpdated',()=>{
+    console.log('AWS IAM Credentials have been updated.  You will now need to restart your applicaitons.')
+});
+
+const keyMan = new KeyManger(['ef1c55a2-1808-450c-824a-62556d46b7b5'], credentialsFile);
 keyMan.on('keyIsReady', (keyObj)=>{
     var keys = Object.keys(keyObj);
     console.log('\nKey ID '+ keys[0] +' is ready for encyption and and the data encyptyion key is ' + keyObj[keys[0]].toString('hex'));
@@ -25,41 +42,5 @@ keyMan.on('keyIsReady', (keyObj)=>{
     console.log('Now lets decrypt and see if we get our orignal text:');
     var unencryptedText = crypto.decrypt(encryptedTextBuffer);
     console.dir('Decrypted  ->'+ unencryptedText +'<-');
-    testFileEncrypting();
 });
 
-keyMan.on('Error', (errDesc, errDetail)=>{
-    console.log('Error Desc = ' + errDesc);
-    console.log('Error Detail = ' + errDetail);
-});
-
-setTimeout(()=>{
-    if (keyMan.dataEncryptionKeyObj == {}){
-        console.log('Data encryption key not set.  Encryption not possible.');
-    } else {
-        console.log('\ntestMe:  After 15 seconds the data Encryption Key object follows:');
-        console.dir(keyMan.dataEncryptionKeyObj, {depth:null});
-    };
-},15000);
-
-console.log('testMe is free to do other things...')
-
-
-function testFileEncrypting(){
-    console.log('test File Encryption')
-    if (fs.existsSync(testConfigInFilename)){
-        testConfigIn = JSON.parse(fs.readFileSync(testConfigInFilename))
-        console.log('this is a test object from ' + testConfigInFilename);
-        console.dir(testConfigIn, {depth:null});
-        
-        var encryptedFileBuffer = crypto.encrypt(JSON.stringify(testConfigIn));
-        console.log('now lets write this buffer to a file');
-        fs.writeFileSync(testConfigOutFilename, encryptedFileBuffer);
-        
-        console.log('Done. Lets read the encrypted file and decrypt it.');
-        var encryptedFileContents = fs.readFileSync(testConfigOutFilename, 'utf8');
-        var decryptedFileContents = crypto.decrypt(encryptedFileContents);
-        console.log('decryted file contents:');
-        console.dir(JSON.parse(decryptedFileContents),{depth:null});
-    };
-}
