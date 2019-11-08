@@ -97,10 +97,9 @@ class keyManager extends EventEmitter {
             };
         })
         .catch((err)=>{
-            console.log('Error: keyMangerClass error checking AWS credentials: ' + err);
-            console.log('Check credentilas file: ' + this._credentialsFile);
+            console.log('Error: keyMangerClass error checking AWS credentials: ');
+            console.log(err);
             //this.emit('Error', 'keyMangerClass can not read AWS credentials! Check ' + this._credentialsFile + ' err: ' + err);
-            throw new Error(err);
         });
     };
 
@@ -135,8 +134,9 @@ function checkForCredentials(fileName){
     console.log('checking access to credentials file ' + fileName);
     return new Promise((resolve, reject)=>{
         fs.access(fileName, fs.constants.R_OK, (err)=>{
+            console.log('err from fs.access call = ' + err);
             if(err){
-                console.log('Error: keyManagerClass can not access credentials file ' + fileName);
+                //console.log('Error: keyManagerClass can not access credentials file ' + fileName);
                 reject('Error: keyMangerClass can not access credentials file ' + fileName);
             } else {
                 resolve();
