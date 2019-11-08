@@ -97,9 +97,8 @@ class keyManager extends EventEmitter {
             };
         })
         .catch((err)=>{
-            console.log('Error: keyMangerClass error checking AWS credentials: ');
+            console.log('Error: keyMangerClass error while checking for AWS IAM credentials.');
             console.log(err);
-            //this.emit('Error', 'keyMangerClass can not read AWS credentials! Check ' + this._credentialsFile + ' err: ' + err);
         });
     };
 
@@ -131,13 +130,10 @@ class keyManager extends EventEmitter {
 };
 
 function checkForCredentials(fileName){
-    console.log('checking access to credentials file ' + fileName);
     return new Promise((resolve, reject)=>{
         fs.access(fileName, fs.constants.R_OK, (err)=>{
-            console.log('err from fs.access call = ' + err);
             if(err){
-                //console.log('Error: keyManagerClass can not access credentials file ' + fileName);
-                reject('Error: keyMangerClass can not access credentials file ' + fileName);
+                reject(err);
             } else {
                 resolve();
             };
@@ -145,6 +141,7 @@ function checkForCredentials(fileName){
     });
 };
 
+/*
 function checkForCredentialsOld(fileName){
     console.log('checking for cipher credentials file...');
     return new Promise((resolve, reject)=>{
@@ -165,6 +162,7 @@ function checkForCredentialsOld(fileName){
         });
     });
 };
+*/
 
 function generateDataKey(keyID) {
 	console.log('Asking AWS to generate a data encryption key for CMK ID: ' + keyID);
