@@ -37,9 +37,8 @@ class awsAccMan extends EventEmitter {
             this.emit('iamReady');
         })
         .catch((err)=>{
-            console.log('Error: awsAccManClass error checking AWS credentials: ' + err);
-            console.log('Check credentilas file: ' + this._credentialsFile);
-            this.emit('Error', 'awsAccManClass can not read AWS credentials! Check ' + this._credentialsFile + ' err: ' + err);
+            console.log('Error: awsAccManClass error while checking for AWS IAM credentials.');
+            console.log(err);
         });
     };
     /**
@@ -109,11 +108,11 @@ class awsAccMan extends EventEmitter {
 
 function checkForCredentials(fileName){
     return new Promise((resolve, reject)=>{
-        fs.exists(fileName,(exists)=>{
-            if(exists == true){
-                resolve();
+        fs.access(fileName, fs.constants.R_OK, (err)=>{
+            if(err){
+                reject(err);
             } else {
-                reject('Credentials File not found');
+                resolve();
             };
         });
     });
