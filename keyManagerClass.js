@@ -134,9 +134,17 @@ function checkForCredentials(fileName){
     return new Promise((resolve, reject)=>{
         fs.exists(fileName,(exists)=>{
             if(exists == true){
-                resolve();
+                fs.access(fileName, fs.constants.R_OK, (err)=>{
+                    if(err){
+                        console.log('Error: keyManagerClass can not access credentials file ' + fileName);
+                        reject('Error: keyMangerClass can not access credentials file ' + fileName);
+                    } else {
+                        resolve();
+                    };
+                });
             } else {
-                reject('Credentials File not found');
+                console.log('Error: keyMangerClass can not find credentials file ' + fileName);
+                reject('Error: keyMangerClass can not find credentials file ' + fileName);
             };
         });
     });
