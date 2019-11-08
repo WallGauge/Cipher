@@ -132,6 +132,20 @@ class keyManager extends EventEmitter {
 };
 
 function checkForCredentials(fileName){
+    console.log('checking access to credentials file ' + fileName);
+    return new Promise((resolve, reject)=>{
+        fs.access(fileName, fs.constants.R_OK, (err)=>{
+            if(err){
+                console.log('Error: keyManagerClass can not access credentials file ' + fileName);
+                reject('Error: keyMangerClass can not access credentials file ' + fileName);
+            } else {
+                resolve();
+            };
+        });
+    });
+};
+
+function checkForCredentialsOld(fileName){
     console.log('checking for cipher credentials file...');
     return new Promise((resolve, reject)=>{
         fs.exists(fileName,(exists)=>{
