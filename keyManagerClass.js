@@ -99,9 +99,8 @@ class keyManager extends EventEmitter {
         .catch((err)=>{
             console.log('Error: keyMangerClass error checking AWS credentials: ' + err);
             console.log('Check credentilas file: ' + this._credentialsFile);
-            this.emit('Error', 'keyMangerClass can not read AWS credentials! Check ' + this._credentialsFile + ' err: ' + err);
+            //this.emit('Error', 'keyMangerClass can not read AWS credentials! Check ' + this._credentialsFile + ' err: ' + err);
         });
-        
     };
 
     /** Saves custom config items to the config file located in _masterKeyID Path 
