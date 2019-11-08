@@ -39,6 +39,7 @@ class keyManager extends EventEmitter {
         creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
         checkForCredentials(this._credentialsFile)
         .then(()=>{
+            console.log('Setting up AWS KMS...');
             kms = new AWS.KMS({
                 accessKeyId: creds.accessKeyId,            //credentials for your IAM user
                 secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
@@ -131,6 +132,7 @@ class keyManager extends EventEmitter {
 };
 
 function checkForCredentials(fileName){
+    console.log('checking for cipher credentials file...');
     return new Promise((resolve, reject)=>{
         fs.exists(fileName,(exists)=>{
             if(exists == true){
