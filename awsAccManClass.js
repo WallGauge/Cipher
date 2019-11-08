@@ -43,7 +43,7 @@ class awsAccMan extends EventEmitter {
     };
     /**
      * Gets the age of the IAM security credentials currently in use.  
-     * Returns a promise withg the age in number of days as a floating point
+     * Returns a promise with the age in number of days as a floating point
      * 
      */
     getAccessKeyAge(){
