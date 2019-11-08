@@ -100,6 +100,7 @@ class keyManager extends EventEmitter {
             console.log('Error: keyMangerClass error checking AWS credentials: ' + err);
             console.log('Check credentilas file: ' + this._credentialsFile);
             //this.emit('Error', 'keyMangerClass can not read AWS credentials! Check ' + this._credentialsFile + ' err: ' + err);
+            throw new Error(err);
         });
     };
 
