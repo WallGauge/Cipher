@@ -79,30 +79,34 @@ class awsAccMan extends EventEmitter {
 
     /**
      * Rotates the current AWS IAM access key by requesting new key, saving it to the credentials file location,
-     * and deleting the old key.
-     * emits: 
+     * and deleting the old key.f
+     * Returns promise and emits: 
      *  emit('iamCredentialsUpdated');
      */
     rotateAccessKey(){
-        if(this.haveCredentials) {
-            console.log('awsAccManClass is rotating access keys');
-            getNewAccessKey()
-            .then((data)=>{
-                var keyToDelete = creds.accessKeyId
-                saveNewAccessKey(data.AccessKey.AccessKeyId, data.AccessKey.SecretAccessKey);
-                return deleteAccessKey(keyToDelete)
-            })    
-            .then(()=>{
-                console.log('AWS IAM key rotation complete.');
-                this.emit('iamCredentialsUpdated');
-            }) 
-            .catch((err)=>{
-                console.log('Error rotating AWS IAM access credentials ' + err);
-                this.emit('Error', 'Rotating AWS IAM access credentials ' + err);
-            });
-        } else {
-            console.log('AWS credentials missing. rotateAccessKey not allowed');
-        };
+        return new Promise((resolve, reject)=>{
+            if(this.haveCredentials) {
+                console.log('awsAccManClass is rotating access keys');
+                getNewAccessKey()
+                .then((data)=>{
+                    var keyToDelete = creds.accessKeyId
+                    saveNewAccessKey(data.AccessKey.AccessKeyId, data.AccessKey.SecretAccessKey);
+                    return deleteAccessKey(keyToDelete)
+                })    
+                .then(()=>{
+                    console.log('AWS IAM key rotation complete.');
+                    this.emit('iamCredentialsUpdated');
+                    resolve();
+                }) 
+                .catch((err)=>{
+                    console.log('Error rotating AWS IAM access credentials ' + err);
+                    reject('Error rotating AWS IAM access credentials ' + err)
+                });
+            } else {
+                console.log('AWS credentials missing. rotateAccessKey not allowed');
+                reject('AWS credentials missing. rotateAccessKey not allowed');
+            };
+        });
     };
 };
 
