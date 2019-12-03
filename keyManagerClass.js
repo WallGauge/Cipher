@@ -166,20 +166,16 @@ function decryptKey(encryptedKeyBuffer) {
         const params = {
             CiphertextBlob: encryptedKeyBuffer
         };
-        try{
-            kms.decrypt(params, (err, data) => {
-                if (err) {
-                    console.log('Error calling kms.decrypt:');
-                    console.log(err);
-                    reject(err);
-                } else {
-                    resolve(data.Plaintext);
-                };
-            });
-        } catch(err) {
-            console.log('Caught AWS KMS error ' + err);
-            reject('Caught AWS KMS error ' + err);
-        };
+
+        kms.decrypt(params, (err, data) => {
+            if (err) {
+                console.log('Error calling kms.decrypt:');
+                console.log(err);
+                reject(err);
+            } else {
+                resolve(data.Plaintext);
+            };
+        });
     });
 };
 
