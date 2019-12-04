@@ -5,7 +5,8 @@ const Crypto =          require('./cipherClass.js').encryption;
 const credentialsFile = __dirname + '/awsConfig.json'
 var crypto = {};
 var maxKeyAgeInDays = 0.1;
-
+testEcnryption()
+/*
 //testEcnryption();
 var accMan = new AccMan(credentialsFile);
 
@@ -57,10 +58,10 @@ setTimeout(()=>{
     console.log('\nTest 4: Encryption starting now...');
     testEcnryption();
 },90000);
-
+*/
 
 function testEcnryption(){
-    const keyMan = new KeyManger(['ef1c55a2-1808-450c-824a-62556d46b7b5'], credentialsFile);
+    const keyMan = new KeyManger(['ef1c55a2-1808-450c-824a-62556d46b7b5'], credentialsFile, __dirname + '/cmk.json');
     keyMan.on('keyIsReady', (keyObj)=>{
         var keys = Object.keys(keyObj);
         console.log('\nKey ID '+ keys[0] +' is ready for encyption and and the data encyptyion key is ' + keyObj[keys[0]].toString('hex'));
@@ -77,5 +78,9 @@ function testEcnryption(){
         var unencryptedText = crypto.decrypt(encryptedTextBuffer);
         console.dir('Decrypted  ->'+ unencryptedText +'<-');
     });
+
+    keyMan.on('Error', ((err)=>{
+        console.log('We got an error: ' + err);
+    }))
 };
 

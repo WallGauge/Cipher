@@ -19,7 +19,7 @@ var kms = {};
  * 
  * @param {string} cmkIDs This text string array must have a list of customer master keys to use for encryption 
  * @param {string} CredentialsFile File location of the AWS IMA credentials in JSON format 
- * @param {string} cmkFilePath This is an optional file path and name of the location to store the CMK ID and encryted key
+ * @param {string} cmkFilePath This is an optional file path and name of the location to store the CMK ID and encryted data key
  * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
  */
 class keyManager extends EventEmitter {
@@ -64,7 +64,7 @@ class keyManager extends EventEmitter {
 
                 this._cmkIdArray.forEach((val)=>{
                     if(cmkList.indexOf(val) == -1){
-                        console.log('CMK ID ' + val + ', missing.');
+                        console.log('CMK ID ' + val + ', missing, creating a new one.');
                         generateDataKey(val)
                         .then((data)=>{
                             this.dataEncryptionKeyObj[val] = data.Plaintext;
