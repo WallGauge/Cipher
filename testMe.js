@@ -1,6 +1,7 @@
 const AccMan =          require('./cipherClass.js').acctManager;
 const KeyManger =       require('./cipherClass.js').keyManager;
 const Crypto =          require('./cipherClass.js').encryption;
+const fs =              require("fs");
 
 const credentialsFile = __dirname + '/awsConfig.json'
 var crypto = {};
@@ -61,7 +62,16 @@ setTimeout(()=>{
 */
 
 function testEcnryption(){
-    const keyMan = new KeyManger(['ef1c55a2-1808-450c-824a-62556d46b7b5'], credentialsFile, __dirname + '/cmk.json');
+    var keyID = 'put your key ID here if cmk.json is missing'
+    var cmkFilePath = __dirname + '/cmk.json'
+    if (fs.existsSync(cmkFilePath)){
+        let masterKeyObject = JSON.parse(fs.readFileSync(cmkFilePath)); 
+        let keys = Object.keys(masterKeyObject);
+        keyID = keys[0];
+        console.log('key ID = ' + keyID);
+    }
+
+    const keyMan = new KeyManger([keyID], credentialsFile, __dirname + '/cmk.json');
     keyMan.on('keyIsReady', (keyObj)=>{
         var keys = Object.keys(keyObj);
         console.log('\nKey ID '+ keys[0] +' is ready for encyption and and the data encyptyion key is ' + keyObj[keys[0]].toString('hex'));

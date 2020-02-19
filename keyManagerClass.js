@@ -52,7 +52,6 @@ class keyManager extends EventEmitter {
                     var buf = Buffer.from(this._masterKeyObject[keyIdFromFile]);
                     decryptKey(buf)
                     .then((key)=>{
-                        console.log('Data encryption key is ready for cmkID = ' + keyIdFromFile);
                         this.dataEncryptionKeyObj[keyIdFromFile]=key;
                         this.emit('keyIsReady', {[keyIdFromFile]:key});
                     })
