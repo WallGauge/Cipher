@@ -39,7 +39,7 @@ class keyManager extends EventEmitter {
         creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
         checkForCredentials(this._credentialsFile)
         .then(()=>{
-            console.log('Setting up AWS KMS...');
+            console.debug('Setting up AWS KMS...');
             kms = new AWS.KMS({
                 accessKeyId: creds.accessKeyId,            //credentials for your IAM user
                 secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
@@ -56,48 +56,47 @@ class keyManager extends EventEmitter {
                         this.emit('keyIsReady', {[keyIdFromFile]:key});
                     })
                     .catch((err)=>{
-                        console.log('Error key Decryption Error form keyManager for cmkID = ' + keyIdFromFile);
+                        console.error('Error key Decryption Error form keyManager for cmkID = ' + keyIdFromFile);
                         this.emit('Error', 'Key Decryption Error for keyID = ' + keyIdFromFile, err);
                     })
                 });
 
                 this._cmkIdArray.forEach((val)=>{
                     if(cmkList.indexOf(val) == -1){
-                        console.log('CMK ID ' + val + ', missing, creating a new one.');
+                        console.debug('CMK ID ' + val + ', missing, creating a new one.');
                         generateDataKey(val)
                         .then((data)=>{
                             this.dataEncryptionKeyObj[val] = data.Plaintext;
-                            console.log('saving encrypted copy of data encryption key...');
+                            console.debug('saving encrypted copy of data encryption key...');
                             this._saveItem({[val]:data.CiphertextBlob});
                             this.emit('keyIsReady', {[val]:data.Plaintext});
                         })
                         .catch((err)=>{
-                            console.log('Error Key Decryption Error or Issue creating new data encryption Key for key ID ' + val);
+                            console.error('Error Key Decryption Error or Issue creating new data encryption Key for key ID ' + val);
                             this.emit('Error', 'Key Decryption Error or Issue creating new data encryption Key for key ID ' + val, err);
                         });
                     };
                 });
 
             } else {                
-                console.log('Data encryption Key File not found! Creating new File...');
+                console.debug('Data encryption Key File not found! Creating new File...');
                 this._cmkIdArray.forEach((val)=>{
                     generateDataKey(val)
                     .then((data)=>{
                         this.dataEncryptionKeyObj[val] = data.Plaintext;
-                        console.log('saving encrypted copy of data encryption key...');
+                        console.debug('saving encrypted copy of data encryption key...');
                         this._saveItem({[val]:data.CiphertextBlob});
                         this.emit('keyIsReady', {[val]:data.Plaintext});
                     })
                     .catch((err)=>{
-                        console.log('Error Key Decryption Error or Issue creating new data encryption Key for key ID ' + val);
+                        console.error('Error Key Decryption Error or Issue creating new data encryption Key for key ID ' + val);
                         this.emit('Error', 'Key Decryption Error or Issue creating new data encryption Key for key ID ' + val, err);
                     });
                 });
             };
         })
         .catch((err)=>{
-            console.log('Error: keyMangerClass error while checking for AWS IAM credentials.');
-            console.log(err);
+            console.error('Error: keyMangerClass error while checking for AWS IAM credentials.', err);
         });
     };
 
@@ -107,20 +106,16 @@ class keyManager extends EventEmitter {
      * @param {Object} itemsToSaveAsObject 
      */
     _saveItem(itemsToSaveAsObject){
-        //console.log('saveItem called with:');
-        //console.log(itemsToSaveAsObject);
-    
         var itemList = Object.keys(itemsToSaveAsObject);
         itemList.forEach((keyName)=>{
             this._masterKeyObject[keyName] = itemsToSaveAsObject[keyName];
         })
-        //console.log('Writting file to ' + this._cmkFilePath);
         fs.writeFileSync(this._cmkFilePath, JSON.stringify(this._masterKeyObject));
         this._reloadConfig();
     };
 
     _reloadConfig(){
-        console.log('config reloading...');
+        console.debug('config reloading...');
         this._masterKeyObject = {};
         if (fs.existsSync(this._cmkFilePath)){
             this._masterKeyObject = JSON.parse(fs.readFileSync(this._cmkFilePath));
@@ -141,7 +136,7 @@ function checkForCredentials(fileName){
 };
 
 function generateDataKey(keyID) {
-	console.log('Asking AWS to generate a data encryption key for CMK ID: ' + keyID);
+	console.debug('Asking AWS to generate a data encryption key for CMK ID: ' + keyID);
     return new Promise((resolve, reject) => {
 		const params = {
             KeyId: keyID, 
@@ -150,8 +145,7 @@ function generateDataKey(keyID) {
 
         kms.generateDataKey(params, (err, data) => {
             if (err) {
-				console.log('Error calling kms.generateDataKey:');
-				console.log(err);
+				console.error('Error calling kms.generateDataKey:', err);
                 reject(err);
             } else {
                 resolve(data);
@@ -168,8 +162,7 @@ function decryptKey(encryptedKeyBuffer) {
 
         kms.decrypt(params, (err, data) => {
             if (err) {
-                console.log('Error calling kms.decrypt:');
-                console.log(err);
+                console.error('Error calling kms.decrypt:', err);
                 reject(err);
             } else {
                 resolve(data.Plaintext);

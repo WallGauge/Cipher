@@ -37,8 +37,7 @@ class awsAccMan extends EventEmitter {
             this.emit('iamReady');
         })
         .catch((err)=>{
-            console.log('Error: awsAccManClass error while checking for AWS IAM credentials.');
-            console.log(err);
+            console.error('Error: awsAccManClass error while checking for AWS IAM credentials.', err);
         });
     };
     /**
@@ -59,19 +58,19 @@ class awsAccMan extends EventEmitter {
                     if(keyCount == 1){
                         var keyCreateDate = new Date(data.AccessKeyMetadata[0].CreateDate);
                         var keyAgeInDays = ((new Date((new Date()) - keyCreateDate)).getTime() / 86400000).toFixed(2)
-                        console.log('The AWS IAM access Key for '+ this.userName +' created on ' + keyCreateDate.toDateString() + ', it is '+ keyAgeInDays + ' days old.');
+                        console.debug('The AWS IAM access Key for '+ this.userName +' created on ' + keyCreateDate.toDateString() + ', it is '+ keyAgeInDays + ' days old.');
                         resolve(keyAgeInDays);
                     } else {
-                        console.log('Error the AWS IAM account for ' + this.userName + ' is either missing or has more than one IAM access key.');
+                        console.error('Error the AWS IAM account for ' + this.userName + ' is either missing or has more than one IAM access key.');
                         reject('Error the AWS IAM account for ' + this.userName + ' is either missing or has more than one IAM access key.');
                     };
                 })
                 .catch((err)=>{
-                    console.log('Error getting access key information ' + err);
+                    console.error('Error getting access key information ', err);
                     reject('Getting access key information ' + err);
                 });
             } else {
-                console.log('AWS credentials missing. getAccessKeyInfo not allowed');
+                console.error('AWS credentials missing. getAccessKeyInfo not allowed');
                 reject('AWS credentials missing. getAccessKeyInfo not allowed');
             };
         });
@@ -86,7 +85,7 @@ class awsAccMan extends EventEmitter {
     rotateAccessKey(){
         return new Promise((resolve, reject)=>{
             if(this.haveCredentials) {
-                console.log('awsAccManClass is rotating access keys');
+                console.debug('awsAccManClass is rotating access keys');
                 getNewAccessKey()
                 .then((data)=>{
                     var keyToDelete = creds.accessKeyId
@@ -94,16 +93,16 @@ class awsAccMan extends EventEmitter {
                     return deleteAccessKey(keyToDelete)
                 })    
                 .then(()=>{
-                    console.log('AWS IAM key rotation complete.');
+                    console.debug('AWS IAM key rotation complete.');
                     this.emit('iamCredentialsUpdated');
                     resolve();
                 }) 
                 .catch((err)=>{
-                    console.log('Error rotating AWS IAM access credentials ' + err);
+                    console.error('Error rotating AWS IAM access credentials ', err);
                     reject('Error rotating AWS IAM access credentials ' + err)
                 });
             } else {
-                console.log('AWS credentials missing. rotateAccessKey not allowed');
+                console.error('AWS credentials missing. rotateAccessKey not allowed');
                 reject('AWS credentials missing. rotateAccessKey not allowed');
             };
         });
@@ -127,10 +126,10 @@ function getNewAccessKey(){
         const params = {};
         iam.createAccessKey(params, function(err, data) {
             if (err){
-                console.log('Error awsAccManClass getNewAccessKey: ' + err, err.stack); // an error occurred
+                console.error('Error awsAccManClass getNewAccessKey: ', err); // an error occurred
                 reject(err);
             } else {
-                console.log('new access key object received.');
+                console.debug('new access key object received.');
                 resolve(data);
             };
         });
@@ -138,27 +137,27 @@ function getNewAccessKey(){
 };
 
 function saveNewAccessKey(keyID, keySecret){
-    console.log('saving new AWS config...');
+    console.debug('saving new AWS config...');
     var awsCfgObj = {
         accessKeyId: keyID,
         secretAccessKey: keySecret
     };
-    console.log('Writting new awsConfig to ' + creds.filename);
+    console.debug('Writting new awsConfig to ' + creds.filename);
     fs.writeFileSync(creds.filename, JSON.stringify(awsCfgObj));
 };
 
 function deleteAccessKey(keyID){
-    console.log('Deleting old access key ' + keyID);
+    console.debug('Deleting old access key ' + keyID);
     return new Promise((resolve, reject)=>{
         const params = {
             AccessKeyId: keyID
         };
         iam.deleteAccessKey(params, function(err, data) {
             if (err) {
-                console.log('Error deletAccessKey ' +  err, err.stack); // an error occurred
+                console.error('Error deletAccessKey ', err); 
                 reject(err);
             } else {
-                console.log('Old Access Key deleted from AWS.');           // successful response
+                console.debug('Old Access Key deleted from AWS.');           // successful response
                 resolve();
             };
         });
@@ -172,10 +171,9 @@ function getAccessKeyLastUsed(keyID){
         };
         iam.getAccessKeyLastUsed(params, function(err, data) {
             if (err) {
-                console.log('Error getAccessKeyUser ' +  err, err.stack); // an error occurred
+                console.error('Error getAccessKeyUser ', err,); 
                 reject(err);
             } else {
-                //console.log('User for this Key = ' + data);           // successful response
                 resolve(data);
             };
         });
@@ -189,10 +187,9 @@ function listAccessKeys(userName){
         };
         iam.listAccessKeys(params, function(err, data) {
             if (err) {
-                console.log('Error listAccessKeys ' +  err, err.stack); // an error occurred
+                console.error('Error listAccessKeys ', err); 
                 reject(err);
             } else {
-                //console.log('User for this Key = ' + data);           // successful response
                 resolve(data);
             };
         });
