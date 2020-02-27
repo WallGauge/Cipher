@@ -50,12 +50,17 @@ class awsAccMan extends EventEmitter {
             checkForCredentials(this._credentialsFile)
             .then(()=>{
                 this.haveCredentials = true;
-                iam = new AWS.IAM({
-                    accessKeyId: creds.accessKeyId,            //credentials for your IAM user
-                    secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
-                    region: this._region
-                });
-                resolve();
+                try{
+                    iam = new AWS.IAM({                             //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html
+                        accessKeyId: creds.accessKeyId,            //credentials for your IAM user
+                        secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
+                        region: this._region
+                    });
+                    resolve();
+                } catch(err) {
+                    console.error('Error: constructing AWS.IAM class are credentials good?', err);
+                    reject ('Error: constructing AWS.IAM class are credentials good?');
+                };
             })
             .catch((err)=>{
                 console.error('Error: awsAccManClass error while reloading credentials for AWS IAM credentials.', err);
