@@ -56,8 +56,9 @@ class awsAccMan extends EventEmitter {
                         secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
                         region: this._region
                     });
-                    console.debug('we are fufulling the reloadCredentials promise')
-                    resolve();
+                    console.debug('checking accessKeyLastUsed')
+
+                    return getUser()
                 } catch(err) {
                     console.error('Error: constructing AWS.IAM class are credentials good?', err);
                     reject ('Error: constructing AWS.IAM class are credentials good?');
@@ -239,6 +240,21 @@ function listAccessKeys(userName){
                 console.error('Error listAccessKeys ', err); 
                 reject(err);
             } else {
+                resolve(data);
+            };
+        });
+    });
+};
+
+function getUser(){
+    return new Promise((resolve, reject)=>{
+        const params = {};
+        iam.getUser(params, function(err, data) {
+            if (err) {
+                console.error('Error getUser ', err); 
+                reject(err);
+            } else {
+                console.debug('getuser results = ' + data);
                 resolve(data);
             };
         });
