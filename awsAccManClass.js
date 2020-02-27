@@ -40,6 +40,30 @@ class awsAccMan extends EventEmitter {
             console.error('Error: awsAccManClass error while checking for AWS IAM credentials.', err);
         });
     };
+
+    /** reloads IAM credentials
+     * returns a promise
+     */
+    reloadCredentials(){
+        return new Promise((resolve, reject)=>{
+            creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
+            checkForCredentials(this._credentialsFile)
+            .then(()=>{
+                this.haveCredentials = true;
+                iam = new AWS.IAM({
+                    accessKeyId: creds.accessKeyId,            //credentials for your IAM user
+                    secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
+                    region: this._region
+                });
+                resolve();
+            })
+            .catch((err)=>{
+                console.error('Error: awsAccManClass error while reloading credentials for AWS IAM credentials.', err);
+                reject(err);
+            });
+        });
+    };
+
     /**
      * Gets the age of the IAM security credentials currently in use.  
      * Returns a promise with the age in number of days as a floating point
