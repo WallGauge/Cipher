@@ -107,6 +107,17 @@ class awsAccMan extends EventEmitter {
             };
         });
     };
+
+    /** Creates new credentials file
+     * 
+     * @param {string} accessKeyId AWS IAM key ID
+     * @param {string} secretAccessKey AWS IAM key secret
+     */
+    createCredentialsFile(accessKeyId = '', secretAccessKey = ''){
+        console.debug('Creating new AWS IAM credentials file.')
+        saveNewAccessKey(accessKeyId, secretAccessKey)
+    };
+
 };
 
 function checkForCredentials(fileName){
@@ -143,7 +154,13 @@ function saveNewAccessKey(keyID, keySecret){
         secretAccessKey: keySecret
     };
     console.debug('Writting new awsConfig to ' + creds.filename);
-    fs.writeFileSync(creds.filename, JSON.stringify(awsCfgObj));
+    try{
+        fs.writeFileSync(creds.filename, JSON.stringify(awsCfgObj));
+    } catch (err) {
+        console.error('Error saveNewAccessKey in awsAccManClass.js', err);
+        return false;
+    };
+    return true;
 };
 
 function deleteAccessKey(keyID){
