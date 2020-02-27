@@ -109,13 +109,15 @@ class awsAccMan extends EventEmitter {
     };
 
     /** Creates new credentials file
+     * This is a synchronous call.
+     * Returns true or false 
      * 
      * @param {string} accessKeyId AWS IAM key ID
      * @param {string} secretAccessKey AWS IAM key secret
      */
     createCredentialsFile(accessKeyId = '', secretAccessKey = ''){
         console.debug('Creating new AWS IAM credentials file.')
-        saveNewAccessKey(accessKeyId, secretAccessKey)
+        return saveNewAccessKey(accessKeyId, secretAccessKey)
     };
 
 };
