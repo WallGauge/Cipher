@@ -56,6 +56,7 @@ class awsAccMan extends EventEmitter {
                         secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
                         region: this._region
                     });
+                    console.alert('we are fufulling the reloadCredentials promise')
                     resolve();
                 } catch(err) {
                     console.error('Error: constructing AWS.IAM class are credentials good?', err);
