@@ -32,22 +32,35 @@ function createAcct(){
 
     var createReslut = accMan.createCredentialsFile('', '')
     if(createReslut === true){
-        console.log('file created. Reinit class...');
-        var accManTemp = new AccMan(credentialsFile);
+        console.log('file created.  Verifying new credentials...');
+        accMan.reloadCredentials()
+        .then(()=>{
+            console.log('New credentials are good!');
+            console.log('IAM user name =     ' + accMan.userArn);
+            console.log('IAM user ID =       ' + accMan.userID);
+            console.log('IAM resource Name = ' + accMan.userName)
+        })
 
-        accManTemp.on('iamReady',(()=>{
-            console.log('Class reinit okay.');
-            console.log('IAM user name =     ' + accManTemp.userArn);
-            console.log('IAM user ID =       ' + accManTemp.userID);
-            console.log('IAM resource Name = ' + accManTemp.userName)
-            accMan = new AccMan(credentialsFile);
-        }));
+        .catch((err)=>{
+            console.log('Fail.  New credentials did not work.  Try again');
+        })
 
-        accManTemp.on('iamError',((err)=>{
-            console.log('there was an error when we tried to reinit class:');
-            console.log(err.toString());
-            console.log('there may be somting wrong with the credentials file we just created.')
-        }));
+
+        // var accManTemp = new AccMan(credentialsFile);
+
+        // accManTemp.on('iamReady',(()=>{
+        //     console.log('Class reinit okay.');
+        //     console.log('IAM user name =     ' + accManTemp.userArn);
+        //     console.log('IAM user ID =       ' + accManTemp.userID);
+        //     console.log('IAM resource Name = ' + accManTemp.userName)
+        //     accMan = new AccMan(credentialsFile);
+        // }));
+
+        // accManTemp.on('iamError',((err)=>{
+        //     console.log('there was an error when we tried to reinit class:');
+        //     console.log(err.toString());
+        //     console.log('there may be somting wrong with the credentials file we just created.')
+        // }));
     }
 }
 

@@ -64,20 +64,26 @@ class awsAccMan extends EventEmitter {
             checkForCredentials(this._credentialsFile)
             .then(()=>{
                 this.haveCredentials = true;
-                try{
-                    iam = new AWS.IAM({                             //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html
-                        accessKeyId: creds.accessKeyId,            //credentials for your IAM user
-                        secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
-                        region: this._region
-                    });
-                    console.debug('checking accessKeyLastUsed')
-                    return getUser()
-                } catch(err) {
-                    console.error('Error: constructing AWS.IAM class are credentials good?', err);
-                    reject ('Error: constructing AWS.IAM class are credentials good?');
-                };
+                iam = new AWS.IAM({                             //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html
+                    accessKeyId: creds.accessKeyId,            //credentials for your IAM user
+                    secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
+                    region: this._region
+                });
+                getUser()
+                .then((dObj)=>{
+                    this.userName = dObj.User.UserName
+                    this.userID = dObj.User.UserId
+                    this.userArn = dObj.User.Arn
+                    resolve();
+                })
+                .catch((err)=>{
+                    this.haveCredentials = false;
+                    console.error('Error verifying credentials details follow:', err)
+                    reject(err);
+                })
             })
             .catch((err)=>{
+                this.haveCredentials = false;
                 console.error('Error: awsAccManClass error while reloading credentials for AWS IAM credentials.', err);
                 reject(err);
             });
