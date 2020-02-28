@@ -6,60 +6,51 @@ const fs =              require("fs");
 const credentialsFile = __dirname + '/awsConfig.json'
 var crypto = {};
 var maxKeyAgeInDays = 0.1;
-testEcnryption()
-/*
+//testEcnryption()
+
 //testEcnryption();
 var accMan = new AccMan(credentialsFile);
 
-console.log('This test will rotate the keys three times.  One at startup, 2nd 30 seconds later, and a 3rd time 30 seconds after that.');
-console.log('After the 3rd key rotation and 90 seconds after start, test 4 will test encryption based on the new keys...');
+accMan.on('iamReady',(()=>{
+    console.log('Class init okay.');
+    console.log('IAM user name =     ' + accMan.userArn);
+    console.log('IAM user ID =       ' + accMan.userID);
+    console.log('IAM resource Name = ' + accMan.userName)
+}));
 
-accMan.on('iamReady',()=>{
-    console.log('\nTest 1: Rotating credentials on startup...');
-    accMan.rotateAccessKey()
-    .then(()=>{
-        console.log('AWS IAM Credentials have been updated.  Reloading class!!.')
-        accMan = new AccMan(credentialsFile);
-    })
-    .catch((err)=>{
-        console.log(err);
-    });
+accMan.on('iamError',((err)=>{
+    console.log('there was an error when we tried to init the class:');
+    console.log(err.toString());
+}));
 
-});
 
-setTimeout(()=>{
-    console.log('\nTest 2: Testing the reload of AccMan credentials worked by renewing key again...');
-    accMan.rotateAccessKey()
-    .then(()=>{
-        console.log('AWS IAM Credentials have been updated.  Reloading class!!.')
-        accMan = new AccMan(credentialsFile);
-    })
-    .catch((err)=>{
-        console.log(err);
-    });
-},30000);
+setTimeout(()=>{createAcct()},5000)
 
-setTimeout(()=>{
-    console.log('\nTest 3: Testing the reload of AccMan credentials worked by renewing key again...');
-    accMan.rotateAccessKey()
-    .then(()=>{
-        console.log('AWS IAM Credentials have been updated.  Reloading class!!.')
-        accMan = new AccMan(credentialsFile);
 
-        accMan.on('iamReady',()=>{
+function createAcct(){
+    console.log('\nCreate new credentialsFile');
 
-        });
-    })
-    .catch((err)=>{
-        console.log(err);
-    });
-},60000);
+    var createReslut = accMan.createCredentialsFile('', '')
+    if(createReslut === true){
+        console.log('file created. Reinit class...');
+        var accManTemp = new AccMan(credentialsFile);
 
-setTimeout(()=>{
-    console.log('\nTest 4: Encryption starting now...');
-    testEcnryption();
-},90000);
-*/
+        accManTemp.on('iamReady',(()=>{
+            console.log('Class reinit okay.');
+            console.log('IAM user name =     ' + accManTemp.userArn);
+            console.log('IAM user ID =       ' + accManTemp.userID);
+            console.log('IAM resource Name = ' + accManTemp.userName)
+            accMan = new AccMan(credentialsFile);
+        }));
+
+        accManTemp.on('iamError',((err)=>{
+            console.log('there was an error when we tried to reinit class:');
+            console.log(err.toString());
+            console.log('there may be somting wrong with the credentials file we just created.')
+        }));
+    }
+}
+
 
 function testEcnryption(){
     var keyID = 'put your key ID here if cmk.json is missing'

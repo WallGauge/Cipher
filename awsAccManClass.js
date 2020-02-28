@@ -12,8 +12,8 @@ var iam = {};
  * 
  * emits 
  *  this.emit('iamReady')
+ *  this.emit('iamError', err)
  *  this.emit('iamCredentialsUpdated')
- *  this.emit('Error')
  * 
  * @param {string} CredentialsFile File location of the AWS IMA credentials in JSON format 
  * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
@@ -21,7 +21,9 @@ var iam = {};
 class awsAccMan extends EventEmitter {
     constructor(CredentialsFile =  __dirname + '/awsConfig.json', awsRegion = 'us-east-1'){
         super();
-        this.userName = '';
+        this.userName = '';     //Amazon user name should match GDT network name.
+        this.userID = '';       //Amazon unique user ID
+        this.userArn = '';      //Amazon Resource Name
         this._credentialsFile = CredentialsFile
         this._region = awsRegion;
         this.haveCredentials = false;
@@ -34,10 +36,22 @@ class awsAccMan extends EventEmitter {
                 secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
                 region: this._region
             });
-            this.emit('iamReady');
+            // this.emit('iamReady');
+            getUser()
+            .then((dObj)=>{
+                this.userName = dObj.User.UserName
+                this.userID = dObj.User.UserId
+                this.userArn = dObj.User.Arn
+                this.emit('iamReady');
+            })
+            .catch((err)=>{
+                console.error('Error verifying credentials details follow:', err)
+                this.emit('iamError', err);
+            })
         })
         .catch((err)=>{
             console.error('Error: awsAccManClass error while checking for AWS IAM credentials.', err);
+            this.emit('iamError', err);
         });
     };
 
@@ -57,7 +71,6 @@ class awsAccMan extends EventEmitter {
                         region: this._region
                     });
                     console.debug('checking accessKeyLastUsed')
-
                     return getUser()
                 } catch(err) {
                     console.error('Error: constructing AWS.IAM class are credentials good?', err);
@@ -149,6 +162,14 @@ class awsAccMan extends EventEmitter {
     createCredentialsFile(accessKeyId = '', secretAccessKey = ''){
         console.debug('Creating new AWS IAM credentials file.')
         return saveNewAccessKey(accessKeyId, secretAccessKey)
+    };
+
+    /** Read userinformaiont for IAM account
+     * Returns promise 
+     * promise retuns obj for more details see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html#getUser-property
+     */
+    getUserInfo(){
+        return getUser()
     };
 
 };
@@ -254,7 +275,6 @@ function getUser(){
                 console.error('Error getUser ', err); 
                 reject(err);
             } else {
-                console.debug('getuser results = ' + data);
                 resolve(data);
             };
         });

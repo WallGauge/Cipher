@@ -1,6 +1,6 @@
 {
   "name": "cipher",
-  "version": "3.2.5",
+  "version": "3.3.0",
   "description": "",
   "main": "cipherClass.js",
   "repository": {
