@@ -62,3 +62,6 @@ typings/
 cmk.json
 sample_testConfig.encrypted
 awsConfig.json
+eckey.pem.encrypted
+eckey.pem
+launch.json

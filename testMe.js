@@ -24,7 +24,7 @@ accMan.on('iamError',((err)=>{
 }));
 
 
-setTimeout(()=>{createAcct()},5000)
+// setTimeout(()=>{createAcct()},5000)
 
 
 function createAcct(){
@@ -66,7 +66,7 @@ function createAcct(){
 
 
 function testEcnryption(){
-    var keyID = 'put your key ID here if cmk.json is missing'
+    var keyID = 'put your AWS Key Management Service key ID here if cmk.json is missing'
     var cmkFilePath = __dirname + '/cmk.json'
     if (fs.existsSync(cmkFilePath)){
         let masterKeyObject = JSON.parse(fs.readFileSync(cmkFilePath)); 

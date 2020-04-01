@@ -24,6 +24,7 @@ class awsAccMan extends EventEmitter {
         this.userName = '';     //Amazon user name should match GDT network name.
         this.userID = '';       //Amazon unique user ID
         this.userArn = '';      //Amazon Resource Name
+        this.userTags = {};     //Amazon Tags attached to this user
         this._credentialsFile = CredentialsFile
         this._region = awsRegion;
         this.haveCredentials = false;
@@ -42,8 +43,15 @@ class awsAccMan extends EventEmitter {
                 this.userName = dObj.User.UserName
                 this.userID = dObj.User.UserId
                 this.userArn = dObj.User.Arn
+                return getUserTags(this.userName)
+            })
+            .then((dObj)=>{
+                console.warn('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The Tags received follow!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+                console.dir(dObj,{depth:null})
+                this.userTags = dObj
                 this.emit('iamReady');
             })
+            
             .catch((err)=>{
                 console.error('Error verifying credentials details follow:', err)
                 this.emit('iamError', err);
@@ -273,12 +281,35 @@ function listAccessKeys(userName){
     });
 };
 
+/**
+ * See https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html#getUser-property
+ */
 function getUser(){
     return new Promise((resolve, reject)=>{
         const params = {};
         iam.getUser(params, function(err, data) {
             if (err) {
                 console.error('Error getUser ', err); 
+                reject(err);
+            } else {
+                resolve(data);
+            };
+        });
+    });
+};
+
+/**
+ * See https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html#listUserTags-property
+ * @param {*} userName 
+ */
+function getUserTags(userName = ''){
+    return new Promise((resolve, reject)=>{
+        const params = {
+            UserName: userName
+        };
+        iam.listUserTags(params, function(err, data) {
+            if (err) {
+                console.error('Error getUserTags ', err); 
                 reject(err);
             } else {
                 resolve(data);

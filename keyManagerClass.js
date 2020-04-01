@@ -100,6 +100,58 @@ class keyManager extends EventEmitter {
         });
     };
 
+    /**
+     * This method will use the first cmkID passed to this class to encrypt a string or buffer up to 4096 bytes in size.
+     * To encrypt larger amounts of data use the encryptionClass.js
+     * 
+     * returns promise with CiphertextBlob and parm
+     * 
+     * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#encrypt-property 
+     * For more inforamtion on encryptionContext see https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html
+     * 
+     * @param {String} dataToEncrypt this is a string or buffer < 4096 bytes
+     * @param {object} encContext is an optional encryptionContext key value pair
+     * @returns {Promise}
+     */
+    encrypt(dataToEncrypt = '', encContext = {"key":"value"}){
+        return new Promise((resolve, reject)=>{
+            var params = {
+                KeyId: this._cmkIdArray[0],
+                Plaintext: dataToEncrypt,
+                EncryptionContext: encContext
+            }
+            kms.encrypt(params, (err, data) =>{
+                if(err){
+                    reject(err);
+                } else {
+                    resolve(data);
+                };
+            });
+        });
+    };
+
+    /**
+     * This method will decrypt data passed it in the ciphertextBlob parm.  The cipherTextBlob will have the AWS key ID used to encrypt the data. 
+     * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#decrypt-property
+     * 
+     * @param {*} ciphertextBlob 
+     */
+    decrypt(ciphertextBlob = '', encContext = {"key":"value"}){
+        return new Promise((resolve, reject)=>{
+            var params = {
+                CiphertextBlob: Buffer.from(ciphertextBlob),
+                EncryptionContext: encContext
+            };
+            kms.decrypt(params, (err, data)=>{
+                if(err){
+                    reject(err);
+                } else {
+                    resolve(data);
+                };
+            });
+        });
+    };
+
     /** Saves custom config items to the config file located in _masterKeyID Path 
      * Item to be saved should be in key:value format.  For example to seave the IP address of a device call this method with
      * saveItem({webBoxIP:'10.10.10.12});
