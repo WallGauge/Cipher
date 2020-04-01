@@ -1,20 +1,39 @@
 const KeyManger =       require('../cipherClass.js').keyManager;
+const AccMan =          require('../cipherClass.js').acctManager;
 const fs =              require("fs");
 
 const awsCredentialsFile = __dirname + '/awsConfig.json'
-var keyID = 'ef1c55a2-1808-450c-824a-62556d46b7b5' //put your AWS Key Management Service key ID here if cmk.json is missing
+var keyID = '' //put your AWS Key Management Service key ID here if cmk.json is missing
 var eckeyPemFile = __dirname + '/eckey.pem'
 var eckeyPemEncryptedFile = __dirname + '/eckey.pem.encrypted'
 
-if(keyID == ''){
-    console.error('You must edit this file and give it a keyID');
-}  else {
-    console.log('\nThis script will encrypt the contents of source file and save it to destination file.')  
-    console.log('Caution: If the destination file exist it will be overwritten.\n')
-    console.log('     Source File: ' + eckeyPemFile);
-    console.log('Destination File: ' + eckeyPemEncryptedFile)
-    createFile();
-}
+console.log('login to AWS to get keyID from user tags...');
+var accMan = new AccMan(awsCredentialsFile);
+accMan.on('iamReady',(()=>{
+    console.log('Class init okay.');
+    console.log('IAM user name =     ' + accMan.userArn);
+    console.log('IAM user ID =       ' + accMan.userID);
+    console.log('IAM resource Name = ' + accMan.userName);
+    console.log('IAM user Tags Follow:');
+    console.dir(accMan.userTags, {depth:null});
+    keyID = accMan.userTags.encKeyID
+    console.log('keyID = ' + keyID);
+
+    if(keyID == ''){
+        console.error('You must edit this file and give it a keyID or assign it to your IAM user as an encKeyID tag.');
+    }  else {
+        console.log('\nThis script will encrypt the contents of source file and save it to destination file.')  
+        console.log('Caution: If the destination file exist it will be overwritten.\n')
+        console.log('     Source File: ' + eckeyPemFile);
+        console.log('Destination File: ' + eckeyPemEncryptedFile)
+        createFile();
+    };
+}));
+
+accMan.on('iamError',((err)=>{
+    console.log('there was an error when we tried to init the class:');
+    console.log(err.toString());
+}));
 
 function createFile(){
     console.log('\nStep 1) read source file...');

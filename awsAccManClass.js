@@ -37,18 +37,14 @@ class awsAccMan extends EventEmitter {
                 secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
                 region: this._region
             });
-            // this.emit('iamReady');
             getUser()
             .then((dObj)=>{
                 this.userName = dObj.User.UserName
                 this.userID = dObj.User.UserId
                 this.userArn = dObj.User.Arn
-                return getUserTags(this.userName)
+                return this.getUserTags(this.userName)
             })
-            .then((dObj)=>{
-                console.warn('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The Tags received follow!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-                console.dir(dObj,{depth:null})
-                this.userTags = dObj
+            .then(()=>{
                 this.emit('iamReady');
             })
             
@@ -186,6 +182,28 @@ class awsAccMan extends EventEmitter {
         return getUser()
     };
 
+    /** Returs a promise and sets this.userTags 
+     * IAM user tags are created when a AWS IAM user is created.  
+     * 
+     * @param {*} userName 
+     */
+    getUserTags(userName = ''){
+        return new Promise((resolve, reject)=>{
+            getUserTags(userName)
+            .then((dObj)=>{
+                var arrayOfTags = dObj.Tags;
+                if(Array.isArray(arrayOfTags)){
+                    arrayOfTags.forEach((val, ndx)=>{
+                        this.userTags[val.Key] = val.Value
+                    });
+                };
+                resolve();
+            })
+            .catch((err)=>{
+                reject(err);
+            });
+        });
+    };
 };
 
 function checkForCredentials(fileName){
@@ -239,7 +257,6 @@ function deleteAccessKey(keyID){
         };
         iam.deleteAccessKey(params, function(err, data) {
             if (err) {
-                console.error('Error deletAccessKey ', err); 
                 reject(err);
             } else {
                 console.debug('Old Access Key deleted from AWS.');           // successful response
@@ -256,7 +273,6 @@ function getAccessKeyLastUsed(keyID){
         };
         iam.getAccessKeyLastUsed(params, function(err, data) {
             if (err) {
-                console.error('Error getAccessKeyUser ', err,); 
                 reject(err);
             } else {
                 resolve(data);
@@ -272,7 +288,6 @@ function listAccessKeys(userName){
         };
         iam.listAccessKeys(params, function(err, data) {
             if (err) {
-                console.error('Error listAccessKeys ', err); 
                 reject(err);
             } else {
                 resolve(data);
@@ -289,7 +304,6 @@ function getUser(){
         const params = {};
         iam.getUser(params, function(err, data) {
             if (err) {
-                console.error('Error getUser ', err); 
                 reject(err);
             } else {
                 resolve(data);
@@ -309,7 +323,6 @@ function getUserTags(userName = ''){
         };
         iam.listUserTags(params, function(err, data) {
             if (err) {
-                console.error('Error getUserTags ', err); 
                 reject(err);
             } else {
                 resolve(data);
