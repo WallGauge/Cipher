@@ -1,10 +1,20 @@
 const _crypto = require ('crypto');
 
+/**
+ * This class uses the Node.js crypto object to encrypt lage files.  
+ * The encrypton is based on the encrption key passed to the constructor.  
+ * The encryption key should be generated and encrypted with a 3rd party encryption service like Amazon Web Services KMS
+ */
 class encryption {
     constructor(encryptionKey){
         this.key = encryptionKey;
     }
 
+    /**
+     * Encrypts data base on the key passed to this class.  Ueses a AES-256-GCM cipher
+     * @param {String} text = text to encrypt
+     * @returns{buffer} 
+     */
     encrypt(text) {
         // random initialization vector
         const iv = _crypto.randomBytes(16);
@@ -19,6 +29,11 @@ class encryption {
         return Buffer.concat([salt, iv, tag, encrypted]).toString('base64');
     };
 
+    /**
+     * Decrypts a buffer from the above encrypt command. 
+     * @param {buffer} encData 
+     * @returns {string} decrypted data
+     */
     decrypt(encData){
         const bData = Buffer.from(encData, 'base64');
         // convert data to buffers

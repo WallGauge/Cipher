@@ -6,7 +6,8 @@ var creds = {};
 var kms = {};
 
 /**
- * This class is used to manage data encryption keys.  The key is encrypted with a Customer Master Key and managed by Amazon Web Services Key Management Service.
+ * This class is used to manage data encryption keys for use with the encryptionClass.js and encrypt small amounts (<4k) of data direclty with AWS KMS cloud.  
+ * The data encryption key is encrypted with a Customer Master Key and managed by Amazon Web Services Key Management Service.
  * This class looks for an encrypted “data encryption key” in a local file named cmk.json (default name).  
  * If the cmk.json file is missing the class will use AWS to create a new data encryption key for each customer master key passed.  
  * An encrypted version of the new data encryption key and the customer master key ID will be stored in the cmk.json file.  
@@ -104,6 +105,9 @@ class keyManager extends EventEmitter {
      * This method will use the first cmkID passed to this class to encrypt a string or buffer up to 4096 bytes in size.
      * To encrypt larger amounts of data use the encryptionClass.js
      * 
+     * This method does not use the key in the cmk.json file for encryption.  
+     * Instead it uses a AWS Customer managed key referenced in the first key passed in the cmkIDs param during construction of this class.
+     * 
      * returns promise with CiphertextBlob and parm
      * 
      * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#encrypt-property 
@@ -133,8 +137,16 @@ class keyManager extends EventEmitter {
     /**
      * This method will decrypt data passed it in the ciphertextBlob parm.  The cipherTextBlob will have the AWS key ID used to encrypt the data. 
      * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#decrypt-property
+     * For more inforamtion on encryptionContext see https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html
+     * 
+     * This method does not use the key in the cmk.json file for encryption.  
+     * Instead it uses a AWS Customer managed key referenced in the first key passed in the cmkIDs param during construction of this class.
+     * 
+     * The encContext value must match the encContext value used to encrypt the data
      * 
      * @param {*} ciphertextBlob 
+     * @param {object} encContext is an optional encryptionContext key value pair
+     * @returns {Promise}
      */
     decrypt(ciphertextBlob = '', encContext = {"key":"value"}){
         return new Promise((resolve, reject)=>{
