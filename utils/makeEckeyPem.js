@@ -1,4 +1,3 @@
-const KeyManger =       require('../cipherClass.js').keyManager;
 const AccMan =          require('../cipherClass.js').acctManager;
 const fs =              require("fs");
 
@@ -6,6 +5,7 @@ const awsCredentialsFile = __dirname + '/awsConfig.json'
 var keyID = '' //put your AWS Key Management Service key ID here if cmk.json is missing
 var eckeyPemFile = __dirname + '/eckey.pem'
 var eckeyPemEncryptedFile = __dirname + '/eckey.pem.encrypted'
+var encContext = ''
 
 console.log('login to AWS to get keyID from user tags...');
 var accMan = new AccMan(awsCredentialsFile);
@@ -17,7 +17,7 @@ accMan.on('iamReady',(()=>{
     console.log('IAM user Tags Follow:');
     console.dir(accMan.userTags, {depth:null});
     keyID = accMan.userTags.encKeyID
-    var encContext = accMan.userTags.gdtAdminApi
+    encContext = accMan.userTags.gdtAdminApi
     console.log('keyID = ' + keyID);
     console.log('encContext = ' + encContext);
 
@@ -39,29 +39,26 @@ accMan.on('iamError',((err)=>{
 
 function createFile(){
     console.log('\nStep 1) read source file...');
-    const keyMan = new KeyManger([keyID], awsCredentialsFile, __dirname + '/cmk.json');
-    keyMan.on('keyIsReady', (keyObj)=>{
-        let dataToEncrypt = fs.readFileSync(eckeyPemFile);
-        console.log('Encryping the folling text from source file:');
-        console.log('\n' + dataToEncrypt + '\n');
-        keyMan.encrypt(dataToEncrypt, encContext)
-        .then((encData)=>{
-            console.log('Here is the response from the encryption call:');
-            console.dir(encData.CiphertextBlob, {depth:null});
+    let dataToEncrypt = fs.readFileSync(eckeyPemFile);
+    console.log('Encryping the folling text from source file:');
+    console.log('\n' + dataToEncrypt + '\n');
+    accMan.encrypt(dataToEncrypt, {'contextKey':encContext}, keyID)
+    .then((encData)=>{
+        console.log('Here is the response from the encryption call:');
+        console.dir(encData.CiphertextBlob, {depth:null});
 
-            console.log('\nStep 2) Saving the encrypted contents to destination file...');
-            fs.writeFileSync(eckeyPemEncryptedFile, encData.CiphertextBlob)
+        console.log('\nStep 2) Saving the encrypted contents to destination file...');
+        fs.writeFileSync(eckeyPemEncryptedFile, encData.CiphertextBlob);
 
-            console.log('\nStep 3) Read the destination file, and decrypt:')
-            let dataToDecrypt = fs.readFileSync(eckeyPemEncryptedFile);
-            return keyMan.decrypt(dataToDecrypt, encContext)
-        })
-        .then((data)=>{
-            console.log('\n' + data.Plaintext) + '\n';
-        })
-        .catch((err)=>{
-            console.error('Error with encryption testing.', err);
-        });
+        console.log('\nStep 3) Read the destination file, and decrypt:');
+        let dataToDecrypt = fs.readFileSync(eckeyPemEncryptedFile);
+        return accMan.decrypt(dataToDecrypt, {'contextKey':encContext})
+    })
+    .then((data)=>{
+        console.log('\n' + data.Plaintext) + '\n';
+    })
+    .catch((err)=>{
+        console.error('Error with encryption testing.', err);
     });
 
 };

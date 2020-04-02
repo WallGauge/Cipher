@@ -4,23 +4,25 @@ const EventEmitter =    require('events');
 
 var creds = {};
 var iam = {};
+var kms = {};
 
-/**
- * This class is used to manage the AWS IAM login credentials.  
- * Its primary purpose is to insure the IAM secret is rotated every 90 days.  
- * To rotate first call getAccessKeyAge() to get the age of the IAM secret.  To replace with new key call rotateAccessKey()
- * 
- * emits 
- *  this.emit('iamReady')
- *  this.emit('iamError', err)
- *  this.emit('iamCredentialsUpdated')
- * 
- * @param {string} CredentialsFile File location of the AWS IMA credentials in JSON format 
- * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
- */
 class awsAccMan extends EventEmitter {
+    /**
+     * This class is used to manage the AWS IAM login credentials.  
+     * Its primary purpose is to insure the IAM secret is rotated every 90 days.  
+     * To rotate first call getAccessKeyAge() to get the age of the IAM secret.  To replace with new key call rotateAccessKey()
+     * 
+     * emits 
+     *  this.emit('iamReady')
+     *  this.emit('iamError', err)
+     *  this.emit('iamCredentialsUpdated')
+     * 
+     * @param {string} CredentialsFile File location of the AWS IMA credentials in JSON format 
+     * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
+     */
     constructor(CredentialsFile =  __dirname + '/awsConfig.json', awsRegion = 'us-east-1'){
         super();
+        overrideDbugLogging('cipher.awsAccMan | ');
         this.userName = '';     //Amazon user name should match GDT network name.
         this.userID = '';       //Amazon unique user ID
         this.userArn = '';      //Amazon Resource Name
@@ -32,11 +34,8 @@ class awsAccMan extends EventEmitter {
         checkForCredentials(this._credentialsFile)
         .then(()=>{
             this.haveCredentials = true;
-            iam = new AWS.IAM({
-                accessKeyId: creds.accessKeyId,            //credentials for your IAM user
-                secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
-                region: this._region
-            });
+            iam = new AWS.IAM({accessKeyId: creds.accessKeyId, secretAccessKey: creds.secretAccessKey, region: this._region});
+            kms = new AWS.KMS({accessKeyId: creds.accessKeyId, secretAccessKey: creds.secretAccessKey, region: this._region});
             getUser()
             .then((dObj)=>{
                 this.userName = dObj.User.UserName
@@ -68,11 +67,8 @@ class awsAccMan extends EventEmitter {
             checkForCredentials(this._credentialsFile)
             .then(()=>{
                 this.haveCredentials = true;
-                iam = new AWS.IAM({                             //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html
-                    accessKeyId: creds.accessKeyId,            //credentials for your IAM user
-                    secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
-                    region: this._region
-                });
+                iam = new AWS.IAM({accessKeyId: creds.accessKeyId, secretAccessKey: creds.secretAccessKey, region: this._region});
+                kms = new AWS.KMS({accessKeyId: creds.accessKeyId, secretAccessKey: creds.secretAccessKey, region: this._region});
                 getUser()
                 .then((dObj)=>{
                     this.userName = dObj.User.UserName
@@ -204,6 +200,72 @@ class awsAccMan extends EventEmitter {
             });
         });
     };
+
+
+    /**
+     * This method will use the first cmkID passed to this class to encrypt a string or buffer up to 4096 bytes in size.
+     * To encrypt larger amounts of data use the encryptionClass.js
+     * 
+     * This method does not use the key in the cmk.json file for encryption.  
+     * Instead it uses a AWS Customer managed key referenced in the first key passed in the cmkIDs param during construction of this class.
+     * 
+     * returns promise with CiphertextBlob and parm
+     * 
+     * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#encrypt-property 
+     * For more inforamtion on encryptionContext see https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html
+     * 
+     * @param {String} dataToEncrypt this is a string or buffer < 4096 bytes
+     * @param {object} encContext is an optional encryptionContext key value pair
+     * @param {String} cmkId is the AWS CMK ID to use for encryption.
+     * @returns {Promise}
+     */
+    encrypt(dataToEncrypt = '', encContext = {"key":"value"}, cmkId = ''){
+        return new Promise((resolve, reject)=>{
+            var params = {
+                KeyId: cmkId,
+                Plaintext: dataToEncrypt,
+                EncryptionContext: encContext
+            }
+            kms.encrypt(params, (err, data) =>{
+                if(err){
+                    reject(err);
+                } else {
+                    resolve(data);
+                };
+            });
+        });
+    };
+
+    /**
+     * This method will decrypt data passed it in the ciphertextBlob parm.  The cipherTextBlob will have the AWS key ID used to encrypt the data. 
+     * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#decrypt-property
+     * For more inforamtion on encryptionContext see https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html
+     * 
+     * This method does not use the key in the cmk.json file for encryption.  
+     * Instead it uses a AWS Customer managed key referenced in the first key passed in the cmkIDs param during construction of this class.
+     * 
+     * The encContext value must match the encContext value used to encrypt the data
+     * 
+     * @param {*} ciphertextBlob 
+     * @param {object} encContext is an optional encryptionContext key value pair
+     * @returns {Promise}
+     */
+    decrypt(ciphertextBlob = '', encContext = {"key":"value"}){
+        return new Promise((resolve, reject)=>{
+            var params = {
+                CiphertextBlob: Buffer.from(ciphertextBlob),
+                EncryptionContext: encContext
+            };
+            kms.decrypt(params, (err, data)=>{
+                if(err){
+                    reject(err);
+                } else {
+                    resolve(data);
+                };
+            });
+        });
+    };
+
 };
 
 function checkForCredentials(fileName){
@@ -331,4 +393,8 @@ function getUserTags(userName = ''){
     });
 };
 
+function overrideDbugLogging(preFix = ''){
+    const orignalConDebug = console.debug;
+    console.debug = ((data = '', arg = '')=>{orignalConDebug(preFix+data, arg)});
+  };
 module.exports = awsAccMan;

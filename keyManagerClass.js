@@ -5,27 +5,28 @@ const EventEmitter =    require('events');
 var creds = {};
 var kms = {};
 
-/**
- * This class is used to manage data encryption keys for use with the encryptionClass.js and encrypt small amounts (<4k) of data direclty with AWS KMS cloud.  
- * The data encryption key is encrypted with a Customer Master Key and managed by Amazon Web Services Key Management Service.
- * This class looks for an encrypted “data encryption key” in a local file named cmk.json (default name).  
- * If the cmk.json file is missing the class will use AWS to create a new data encryption key for each customer master key passed.  
- * An encrypted version of the new data encryption key and the customer master key ID will be stored in the cmk.json file.  
- * The CMK ID is used by AWS to decrypt the data encryption key and it is available in the this.dataEncryptionKey property. 
- * The this.dataEncryptionKey key should never be stored or saved in the file system!
- * 
- * Emits:
- *      this.emit('keyIsReady', this.dataEncryptionKeyObj);  When a data encryption key has been decrypted and ready.
- *      this.emit('Error', 'Key Decryption Error', err);  Emits various errors in this format.
- * 
- * @param {string} cmkIDs This text string array must have a list of customer master keys to use for encryption 
- * @param {string} CredentialsFile File location of the AWS IMA credentials in JSON format 
- * @param {string} cmkFilePath This is an optional file path and name of the location to store the CMK ID and encryted data key
- * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
- */
 class keyManager extends EventEmitter {
+    /**
+     * This class is used to manage data encryption keys for use with the encryptionClass.js and encrypt small amounts (<4k) of data direclty with AWS KMS cloud.  
+     * The data encryption key is encrypted with a Customer Master Key and managed by Amazon Web Services Key Management Service.
+     * This class looks for an encrypted “data encryption key” in a local file named cmk.json (default name).  
+     * If the cmk.json file is missing the class will use AWS to create a new data encryption key for each customer master key passed.  
+     * An encrypted version of the new data encryption key and the customer master key ID will be stored in the cmk.json file.  
+     * The CMK ID is used by AWS to decrypt the data encryption key and it is available in the this.dataEncryptionKey property. 
+     * The this.dataEncryptionKey key should never be stored or saved in the file system!
+     * 
+     * Emits:
+     *      this.emit('keyIsReady', this.dataEncryptionKeyObj);  When a data encryption key has been decrypted and ready.
+     *      this.emit('Error', 'Key Decryption Error', err);  Emits various errors in this format.
+     * 
+     * @param {string} cmkIDs This text string array must have a list of customer master keys to use for encryption 
+     * @param {string} CredentialsFile File location of the AWS IMA credentials in JSON format 
+     * @param {string} cmkFilePath This is an optional file path and name of the location to store the CMK ID and encryted data key
+     * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
+     */
     constructor(cmkIDs = ['',''], CredentialsFile =  __dirname + '/awsConfig.json', cmkFilePath = __dirname + '/cmk.json',  awsRegion = 'us-east-1'){
         super();
+        overrideDbugLogging('cipher.keyManager | ');
         this.dataEncryptionKeyObj = {};
         this._credentialsFile = CredentialsFile
         this._cmkIdArray = cmkIDs;
@@ -101,69 +102,6 @@ class keyManager extends EventEmitter {
         });
     };
 
-    /**
-     * This method will use the first cmkID passed to this class to encrypt a string or buffer up to 4096 bytes in size.
-     * To encrypt larger amounts of data use the encryptionClass.js
-     * 
-     * This method does not use the key in the cmk.json file for encryption.  
-     * Instead it uses a AWS Customer managed key referenced in the first key passed in the cmkIDs param during construction of this class.
-     * 
-     * returns promise with CiphertextBlob and parm
-     * 
-     * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#encrypt-property 
-     * For more inforamtion on encryptionContext see https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html
-     * 
-     * @param {String} dataToEncrypt this is a string or buffer < 4096 bytes
-     * @param {object} encContext is an optional encryptionContext key value pair
-     * @returns {Promise}
-     */
-    encrypt(dataToEncrypt = '', encContext = {"key":"value"}){
-        return new Promise((resolve, reject)=>{
-            var params = {
-                KeyId: this._cmkIdArray[0],
-                Plaintext: dataToEncrypt,
-                EncryptionContext: encContext
-            }
-            kms.encrypt(params, (err, data) =>{
-                if(err){
-                    reject(err);
-                } else {
-                    resolve(data);
-                };
-            });
-        });
-    };
-
-    /**
-     * This method will decrypt data passed it in the ciphertextBlob parm.  The cipherTextBlob will have the AWS key ID used to encrypt the data. 
-     * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#decrypt-property
-     * For more inforamtion on encryptionContext see https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html
-     * 
-     * This method does not use the key in the cmk.json file for encryption.  
-     * Instead it uses a AWS Customer managed key referenced in the first key passed in the cmkIDs param during construction of this class.
-     * 
-     * The encContext value must match the encContext value used to encrypt the data
-     * 
-     * @param {*} ciphertextBlob 
-     * @param {object} encContext is an optional encryptionContext key value pair
-     * @returns {Promise}
-     */
-    decrypt(ciphertextBlob = '', encContext = {"key":"value"}){
-        return new Promise((resolve, reject)=>{
-            var params = {
-                CiphertextBlob: Buffer.from(ciphertextBlob),
-                EncryptionContext: encContext
-            };
-            kms.decrypt(params, (err, data)=>{
-                if(err){
-                    reject(err);
-                } else {
-                    resolve(data);
-                };
-            });
-        });
-    };
-
     /** Saves custom config items to the config file located in _masterKeyID Path 
      * Item to be saved should be in key:value format.  For example to seave the IP address of a device call this method with
      * saveItem({webBoxIP:'10.10.10.12});
@@ -235,4 +173,8 @@ function decryptKey(encryptedKeyBuffer) {
     });
 };
 
+function overrideDbugLogging(preFix = ''){
+    const orignalConDebug = console.debug;
+    console.debug = ((data = '', arg = '')=>{orignalConDebug(preFix+data, arg)});
+  };
 module.exports = keyManager;

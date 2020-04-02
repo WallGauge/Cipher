@@ -1,11 +1,12 @@
 const _crypto = require ('crypto');
 
-/**
- * This class uses the Node.js crypto object to encrypt lage files.  
- * The encrypton is based on the encrption key passed to the constructor.  
- * The encryption key should be generated and encrypted with a 3rd party encryption service like Amazon Web Services KMS
- */
 class encryption {
+    /**
+     * This class uses the Node.js crypto object to encrypt lage files.  
+     * The encrypton is based on the encrption key passed to the constructor.  
+     * The encryption key should be generated and encrypted with a 3rd party encryption service like Amazon Web Services KMS
+     * @param {string} encryptionKey a key that will be used to encrypt and decrypt data
+    */
     constructor(encryptionKey){
         this.key = encryptionKey;
     }
