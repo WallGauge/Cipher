@@ -17,6 +17,7 @@ accMan.on('iamReady',(()=>{
     console.log('IAM user Tags Follow:');
     console.dir(accMan.userTags, {depth:null});
     keyID = accMan.userTags.encKeyID
+    var encContext = accMan.userTags.gdtAdminApi
     console.log('keyID = ' + keyID);
 
     if(keyID == ''){
@@ -42,7 +43,7 @@ function createFile(){
         let dataToEncrypt = fs.readFileSync(eckeyPemFile);
         console.log('Encryping the folling text from source file:');
         console.log('\n' + dataToEncrypt + '\n');
-        keyMan.encrypt(dataToEncrypt)
+        keyMan.encrypt(dataToEncrypt, encContext)
         .then((encData)=>{
             console.log('Here is the response from the encryption call:');
             console.dir(encData.CiphertextBlob, {depth:null});
@@ -52,7 +53,7 @@ function createFile(){
 
             console.log('\nStep 3) Read the destination file, and decrypt:')
             let dataToDecrypt = fs.readFileSync(eckeyPemEncryptedFile);
-            return keyMan.decrypt(dataToDecrypt)
+            return keyMan.decrypt(dataToDecrypt, encContext)
         })
         .then((data)=>{
             console.log('\n' + data.Plaintext) + '\n';
