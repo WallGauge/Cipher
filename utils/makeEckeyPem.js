@@ -19,6 +19,7 @@ accMan.on('iamReady',(()=>{
     keyID = accMan.userTags.encKeyID
     var encContext = accMan.userTags.gdtAdminApi
     console.log('keyID = ' + keyID);
+    console.log('encContext = ' + encContext);
 
     if(keyID == ''){
         console.error('You must edit this file and give it a keyID or assign it to your IAM user as an encKeyID tag.');
