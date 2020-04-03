@@ -215,17 +215,25 @@ class awsAccMan extends EventEmitter {
      * For more inforamtion on encryptionContext see https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html
      * 
      * @param {String} dataToEncrypt this is a string or buffer < 4096 bytes
-     * @param {object} encContext is an optional encryptionContext key value pair
+     * @param {object} encContext is an optional encryptionContext key value pair. Set to null if not used
      * @param {String} cmkId is the AWS CMK ID to use for encryption.
      * @returns {Promise}
      */
     encrypt(dataToEncrypt = '', encContext = {"key":"value"}, cmkId = ''){
         return new Promise((resolve, reject)=>{
-            var params = {
-                KeyId: cmkId,
-                Plaintext: dataToEncrypt,
-                EncryptionContext: encContext
-            }
+            var params = {};
+            if(encContext == null){
+                params = {
+                    KeyId: cmkId,
+                    Plaintext: dataToEncrypt
+                };
+            } else {
+                params = {
+                    KeyId: cmkId,
+                    Plaintext: dataToEncrypt,
+                    EncryptionContext: encContext
+                };
+            };
             kms.encrypt(params, (err, data) =>{
                 if(err){
                     reject(err);
@@ -247,14 +255,21 @@ class awsAccMan extends EventEmitter {
      * The encContext value must match the encContext value used to encrypt the data
      * 
      * @param {*} ciphertextBlob 
-     * @param {object} encContext is an optional encryptionContext key value pair
+     * @param {object} encContext is an optional encryptionContext key value pair. Set to null if not used.
      * @returns {Promise}
      */
     decrypt(ciphertextBlob = '', encContext = {"key":"value"}){
         return new Promise((resolve, reject)=>{
-            var params = {
-                CiphertextBlob: Buffer.from(ciphertextBlob),
-                EncryptionContext: encContext
+            var params = {};
+            if(encContext == null){
+                params = {
+                    CiphertextBlob: Buffer.from(ciphertextBlob),
+                };
+            } else {
+                params = {
+                    CiphertextBlob: Buffer.from(ciphertextBlob),
+                    EncryptionContext: encContext
+                };
             };
             kms.decrypt(params, (err, data)=>{
                 if(err){

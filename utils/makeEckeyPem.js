@@ -1,8 +1,8 @@
 const AccMan =          require('../cipherClass.js').acctManager;
 const fs =              require("fs");
 
-const awsCredentialsFile = '/opt/rGauge/certs/awsCredentials.json' 
-// const awsCredentialsFile = __dirname + '/awsConfig.json'
+// const awsCredentialsFile = '/opt/rGauge/certs/awsCredentials.json' 
+const awsCredentialsFile = __dirname + '/awsConfig.json'
 var keyID = '' //put your AWS Key Management Service key ID here if cmk.json is missing
 var eckeyPemFile = __dirname + '/eckey.pem'
 var eckeyPemEncryptedFile = __dirname + '/eckey.pem.encrypted'
@@ -20,7 +20,7 @@ accMan.on('iamReady',(()=>{
     keyID = accMan.userTags.encKeyID
     encContext = accMan.userTags.gdtAdminApi
     console.log('keyID = ' + keyID);
-    console.log('encContext = ' + encContext);
+    console.log('encContext = ->' + encContext + '<-');
 
     if(keyID == ''){
         console.error('You must edit this file and give it a keyID or assign it to your IAM user as an encKeyID tag.');
@@ -43,7 +43,8 @@ function createFile(){
     let dataToEncrypt = fs.readFileSync(eckeyPemFile);
     console.log('Encryping the folling text from source file:');
     console.log('\n' + dataToEncrypt + '\n');
-    accMan.encrypt(dataToEncrypt, {'contextKey':encContext}, keyID)
+    // accMan.encrypt(dataToEncrypt, {'contextKey':encContext}, keyID)
+    accMan.encrypt(dataToEncrypt, null, keyID)
     .then((encData)=>{
         console.log('Here is the response from the encryption call:');
         console.dir(encData.CiphertextBlob, {depth:null});
@@ -53,7 +54,8 @@ function createFile(){
 
         console.log('\nStep 3) Read the destination file, and decrypt:');
         let dataToDecrypt = fs.readFileSync(eckeyPemEncryptedFile);
-        return accMan.decrypt(dataToDecrypt, {'contextKey':encContext})
+        // return accMan.decrypt(dataToDecrypt, {'contextKey':encContext})
+        return accMan.decrypt(dataToDecrypt, null)
     })
     .then((data)=>{
         console.log('\n' + data.Plaintext) + '\n';
