@@ -1,7 +1,7 @@
 const AccMan =          require('../cipherClass.js').acctManager;
 const fs =              require("fs");
 
-const awsCredentialsFile = __dirname + '/awsConfig.json'
+const awsCredentialsFile = __dirname + '/opt/rGauge/certs/awsCredentials.json' //'/awsConfig.json'
 var keyID = '' //put your AWS Key Management Service key ID here if cmk.json is missing
 var eckeyPemFile = __dirname + '/eckey.pem'
 var eckeyPemEncryptedFile = __dirname + '/eckey.pem.encrypted'
