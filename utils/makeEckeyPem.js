@@ -43,8 +43,8 @@ function createFile(){
     let dataToEncrypt = fs.readFileSync(eckeyPemFile);
     console.log('Encryping the folling text from source file:');
     console.log('\n' + dataToEncrypt + '\n');
-    // accMan.encrypt(dataToEncrypt, {'contextKey':encContext}, keyID)
-    accMan.encrypt(dataToEncrypt, null, keyID)
+    accMan.encrypt(dataToEncrypt, {'contextKey':encContext.toString()}, keyID)
+    // accMan.encrypt(dataToEncrypt, null, keyID)
     .then((encData)=>{
         console.log('Here is the response from the encryption call:');
         console.dir(encData.CiphertextBlob, {depth:null});
@@ -54,8 +54,8 @@ function createFile(){
 
         console.log('\nStep 3) Read the destination file, and decrypt:');
         let dataToDecrypt = fs.readFileSync(eckeyPemEncryptedFile);
-        // return accMan.decrypt(dataToDecrypt, {'contextKey':encContext})
-        return accMan.decrypt(dataToDecrypt, null)
+        return accMan.decrypt(dataToDecrypt, {'contextKey':encContext.toString()})
+        // return accMan.decrypt(dataToDecrypt, null)
     })
     .then((data)=>{
         console.log('\n' + data.Plaintext) + '\n';

@@ -2,6 +2,7 @@ const AWS =             require('aws-sdk');
 const fs =              require("fs");
 const EventEmitter =    require('events');
 
+const logitPrefix = 'cipher.awsAccMan | ';
 var creds = {};
 var iam = {};
 var kms = {};
@@ -22,7 +23,6 @@ class awsAccMan extends EventEmitter {
      */
     constructor(CredentialsFile =  __dirname + '/awsConfig.json', awsRegion = 'us-east-1'){
         super();
-        overrideDbugLogging('cipher.awsAccMan | ');
         this.userName = '';     //Amazon user name should match GDT network name.
         this.userID = '';       //Amazon unique user ID
         this.userArn = '';      //Amazon Resource Name
@@ -108,7 +108,7 @@ class awsAccMan extends EventEmitter {
                     if(keyCount == 1){
                         var keyCreateDate = new Date(data.AccessKeyMetadata[0].CreateDate);
                         var keyAgeInDays = ((new Date((new Date()) - keyCreateDate)).getTime() / 86400000).toFixed(2)
-                        console.debug('The AWS IAM access Key for '+ this.userName +' created on ' + keyCreateDate.toDateString() + ', it is '+ keyAgeInDays + ' days old.');
+                        logit('The AWS IAM access Key for '+ this.userName +' created on ' + keyCreateDate.toDateString() + ', it is '+ keyAgeInDays + ' days old.');
                         resolve(keyAgeInDays);
                     } else {
                         console.error('Error the AWS IAM account for ' + this.userName + ' is either missing or has more than one IAM access key.');
@@ -135,7 +135,7 @@ class awsAccMan extends EventEmitter {
     rotateAccessKey(){
         return new Promise((resolve, reject)=>{
             if(this.haveCredentials) {
-                console.debug('awsAccManClass is rotating access keys');
+                logit('awsAccManClass is rotating access keys');
                 getNewAccessKey()
                 .then((data)=>{
                     var keyToDelete = creds.accessKeyId
@@ -143,7 +143,7 @@ class awsAccMan extends EventEmitter {
                     return deleteAccessKey(keyToDelete)
                 })    
                 .then(()=>{
-                    console.debug('AWS IAM key rotation complete.');
+                    logit('AWS IAM key rotation complete.');
                     this.emit('iamCredentialsUpdated');
                     resolve();
                 }) 
@@ -166,7 +166,7 @@ class awsAccMan extends EventEmitter {
      * @param {string} secretAccessKey AWS IAM key secret
      */
     createCredentialsFile(accessKeyId = '', secretAccessKey = ''){
-        console.debug('Creating new AWS IAM credentials file.')
+        logit('Creating new AWS IAM credentials file.')
         return saveNewAccessKey(accessKeyId, secretAccessKey)
     };
 
@@ -248,6 +248,7 @@ class awsAccMan extends EventEmitter {
      * This method will decrypt data passed it in the ciphertextBlob parm.  The cipherTextBlob will have the AWS key ID used to encrypt the data. 
      * see https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/KMS.html#decrypt-property
      * For more inforamtion on encryptionContext see https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html
+     * For an overview of the decrypt command see https://docs.aws.amazon.com/kms/latest/APIReference/API_Decrypt.html
      * 
      * This method does not use the key in the cmk.json file for encryption.  
      * Instead it uses a AWS Customer managed key referenced in the first key passed in the cmkIDs param during construction of this class.
@@ -303,7 +304,7 @@ function getNewAccessKey(){
                 console.error('Error awsAccManClass getNewAccessKey: ', err); // an error occurred
                 reject(err);
             } else {
-                console.debug('new access key object received.');
+                logit('new access key object received.');
                 resolve(data);
             };
         });
@@ -311,12 +312,12 @@ function getNewAccessKey(){
 };
 
 function saveNewAccessKey(keyID, keySecret){
-    console.debug('saving new AWS config...');
+    logit('saving new AWS config...');
     var awsCfgObj = {
         accessKeyId: keyID,
         secretAccessKey: keySecret
     };
-    console.debug('Writting new awsConfig to ' + creds.filename);
+    logit('Writting new awsConfig to ' + creds.filename);
     try{
         fs.writeFileSync(creds.filename, JSON.stringify(awsCfgObj));
     } catch (err) {
@@ -327,7 +328,7 @@ function saveNewAccessKey(keyID, keySecret){
 };
 
 function deleteAccessKey(keyID){
-    console.debug('Deleting old access key ' + keyID);
+    logit('Deleting old access key ' + keyID);
     return new Promise((resolve, reject)=>{
         const params = {
             AccessKeyId: keyID
@@ -336,7 +337,7 @@ function deleteAccessKey(keyID){
             if (err) {
                 reject(err);
             } else {
-                console.debug('Old Access Key deleted from AWS.');           // successful response
+                logit('Old Access Key deleted from AWS.');           // successful response
                 resolve();
             };
         });
@@ -408,8 +409,7 @@ function getUserTags(userName = ''){
     });
 };
 
-function overrideDbugLogging(preFix = ''){
-    const orignalConDebug = console.debug;
-    console.debug = ((data = '', arg = '')=>{orignalConDebug(preFix+data, arg)});
-  };
+function logit(txt = ''){
+    console.debug(logitPrefix + txt)
+};
 module.exports = awsAccMan;

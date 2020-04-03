@@ -2,6 +2,7 @@ const AWS =             require('aws-sdk');
 const fs =              require("fs");
 const EventEmitter =    require('events');
 
+const logitPrefix = 'cipher.keyManager | ';
 var creds = {};
 var kms = {};
 
@@ -26,7 +27,6 @@ class keyManager extends EventEmitter {
      */
     constructor(cmkIDs = ['',''], CredentialsFile =  __dirname + '/awsConfig.json', cmkFilePath = __dirname + '/cmk.json',  awsRegion = 'us-east-1'){
         super();
-        overrideDbugLogging('cipher.keyManager | ');
         this.dataEncryptionKeyObj = {};
         this._credentialsFile = CredentialsFile
         this._cmkIdArray = cmkIDs;
@@ -41,7 +41,7 @@ class keyManager extends EventEmitter {
         creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
         checkForCredentials(this._credentialsFile)
         .then(()=>{
-            console.debug('Setting up AWS KMS...');
+            logit('Setting up AWS KMS...');
             kms = new AWS.KMS({
                 accessKeyId: creds.accessKeyId,            //credentials for your IAM user
                 secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
@@ -65,11 +65,11 @@ class keyManager extends EventEmitter {
 
                 this._cmkIdArray.forEach((val)=>{
                     if(cmkList.indexOf(val) == -1){
-                        console.debug('CMK ID ' + val + ', missing, creating a new one.');
+                        logit('CMK ID ' + val + ', missing, creating a new one.');
                         generateDataKey(val)
                         .then((data)=>{
                             this.dataEncryptionKeyObj[val] = data.Plaintext;
-                            console.debug('saving encrypted copy of data encryption key...');
+                            logit('saving encrypted copy of data encryption key...');
                             this._saveItem({[val]:data.CiphertextBlob});
                             this.emit('keyIsReady', {[val]:data.Plaintext});
                         })
@@ -81,12 +81,12 @@ class keyManager extends EventEmitter {
                 });
 
             } else {                
-                console.debug('Data encryption Key File not found! Creating new File...');
+                logit('Data encryption Key File not found! Creating new File...');
                 this._cmkIdArray.forEach((val)=>{
                     generateDataKey(val)
                     .then((data)=>{
                         this.dataEncryptionKeyObj[val] = data.Plaintext;
-                        console.debug('saving encrypted copy of data encryption key...');
+                        logit('saving encrypted copy of data encryption key...');
                         this._saveItem({[val]:data.CiphertextBlob});
                         this.emit('keyIsReady', {[val]:data.Plaintext});
                     })
@@ -117,7 +117,7 @@ class keyManager extends EventEmitter {
     };
 
     _reloadConfig(){
-        console.debug('config reloading...');
+        logit('config reloading...');
         this._masterKeyObject = {};
         if (fs.existsSync(this._cmkFilePath)){
             this._masterKeyObject = JSON.parse(fs.readFileSync(this._cmkFilePath));
@@ -138,7 +138,7 @@ function checkForCredentials(fileName){
 };
 
 function generateDataKey(keyID) {
-	console.debug('Asking AWS to generate a data encryption key for CMK ID: ' + keyID);
+	logit('Asking AWS to generate a data encryption key for CMK ID: ' + keyID);
     return new Promise((resolve, reject) => {
 		const params = {
             KeyId: keyID, 
@@ -173,8 +173,8 @@ function decryptKey(encryptedKeyBuffer) {
     });
 };
 
-function overrideDbugLogging(preFix = ''){
-    const orignalConDebug = console.debug;
-    console.debug = ((data = '', arg = '')=>{orignalConDebug(preFix+data, arg)});
-  };
+function logit(txt = ''){
+    console.debug(logitPrefix + txt)
+};
+
 module.exports = keyManager;
