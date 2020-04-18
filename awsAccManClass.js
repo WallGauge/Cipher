@@ -34,6 +34,7 @@ class awsAccMan extends EventEmitter {
         this._retryOnNetworkError = retryOnNetworkError;
         this.haveCredentials = false;
         creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
+        this._init();
         // checkForCredentials(this._credentialsFile)
         // .then(()=>{
         //     this.haveCredentials = true;
