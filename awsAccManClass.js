@@ -2,7 +2,7 @@ const AWS =             require('aws-sdk');
 const fs =              require("fs");
 const EventEmitter =    require('events');
 
-const awsAccManRetryInMinutes = 5;
+const awsAccManRetryInMinutes = 10;
 const logitPrefix = 'cipher.awsAccMan | ';
 var creds = {};
 var iam = {};
@@ -35,35 +35,6 @@ class awsAccMan extends EventEmitter {
         this.haveCredentials = false;
         creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
         this._init();
-        // checkForCredentials(this._credentialsFile)
-        // .then(()=>{
-        //     this.haveCredentials = true;
-        //     iam = new AWS.IAM({accessKeyId: creds.accessKeyId, secretAccessKey: creds.secretAccessKey, region: this._region});
-        //     kms = new AWS.KMS({accessKeyId: creds.accessKeyId, secretAccessKey: creds.secretAccessKey, region: this._region});
-        //     getUser()
-        //     .then((dObj)=>{
-        //         this.userName = dObj.User.UserName
-        //         this.userID = dObj.User.UserId
-        //         this.userArn = dObj.User.Arn
-        //         return this.getUserTags(this.userName)
-        //     })
-        //     .then(()=>{
-        //         this.emit('iamReady');
-        //     })
-            
-        //     .catch((err)=>{
-        //         console.error('Error verifying credentials, err.code = ' + err.code + ' details follow:', err)
-        //         this.emit('iamError', err);
-        //         if(err.code == 'NetworkingError' && this._retryOnNetworkError == true){
-
-        //         }
-
-        //     })
-        // })
-        // .catch((err)=>{
-        //     console.error('Error: awsAccManClass error while checking for AWS IAM credentials.', err);
-        //     this.emit('iamError', err);
-        // });
     };
 
     _init(){
