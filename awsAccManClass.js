@@ -2,6 +2,7 @@ const AWS =             require('aws-sdk');
 const fs =              require("fs");
 const EventEmitter =    require('events');
 
+const awsAccManRetryInMinutes = 5;
 const logitPrefix = 'cipher.awsAccMan | ';
 var creds = {};
 var iam = {};
@@ -20,8 +21,9 @@ class awsAccMan extends EventEmitter {
      * 
      * @param {string} CredentialsFile File location of the AWS IMA credentials in JSON format 
      * @param {string} awsRegion This is your Amazon region (location of your AWS KMS account)
+     * @param {boolean} retryOnNetworkError Defaults to true.  Class will retry to init if network error during class construction.
      */
-    constructor(CredentialsFile =  __dirname + '/awsConfig.json', awsRegion = 'us-east-1'){
+    constructor(CredentialsFile =  __dirname + '/awsConfig.json', awsRegion = 'us-east-1', retryOnNetworkError = true){
         super();
         this.userName = '';     //Amazon user name should match GDT network name.
         this.userID = '';       //Amazon unique user ID
@@ -29,8 +31,41 @@ class awsAccMan extends EventEmitter {
         this.userTags = {};     //Amazon Tags attached to this user
         this._credentialsFile = CredentialsFile
         this._region = awsRegion;
+        this._retryOnNetworkError = retryOnNetworkError;
         this.haveCredentials = false;
         creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
+        // checkForCredentials(this._credentialsFile)
+        // .then(()=>{
+        //     this.haveCredentials = true;
+        //     iam = new AWS.IAM({accessKeyId: creds.accessKeyId, secretAccessKey: creds.secretAccessKey, region: this._region});
+        //     kms = new AWS.KMS({accessKeyId: creds.accessKeyId, secretAccessKey: creds.secretAccessKey, region: this._region});
+        //     getUser()
+        //     .then((dObj)=>{
+        //         this.userName = dObj.User.UserName
+        //         this.userID = dObj.User.UserId
+        //         this.userArn = dObj.User.Arn
+        //         return this.getUserTags(this.userName)
+        //     })
+        //     .then(()=>{
+        //         this.emit('iamReady');
+        //     })
+            
+        //     .catch((err)=>{
+        //         console.error('Error verifying credentials, err.code = ' + err.code + ' details follow:', err)
+        //         this.emit('iamError', err);
+        //         if(err.code == 'NetworkingError' && this._retryOnNetworkError == true){
+
+        //         }
+
+        //     })
+        // })
+        // .catch((err)=>{
+        //     console.error('Error: awsAccManClass error while checking for AWS IAM credentials.', err);
+        //     this.emit('iamError', err);
+        // });
+    };
+
+    _init(){
         checkForCredentials(this._credentialsFile)
         .then(()=>{
             this.haveCredentials = true;
@@ -46,11 +81,19 @@ class awsAccMan extends EventEmitter {
             .then(()=>{
                 this.emit('iamReady');
             })
-            
             .catch((err)=>{
-                console.error('Error verifying credentials details follow:', err)
-                this.emit('iamError', err);
-            })
+                console.error('Error verifying credentials, err.code = ' + err.code + ' details follow:', err)
+                if(err.code == 'NetworkingError' && this._retryOnNetworkError == true){
+                    logit('class will retry to access Amazon servers in '+ awsAccManRetryInMinutes + ' minutes...')
+                    setTimeout(()=>{
+                        logit('Waited ' + awsAccManRetryInMinutes + ' minutes, time to retry and see if we can access Amazon servers.');
+                        this._init();
+                    }, awsAccManRetryInMinutes * 60000)
+                } else {
+                    logit('Not retrying to connect. Emitting an error and giving up!');
+                    this.emit('iamError', err);  
+                };
+            });
         })
         .catch((err)=>{
             console.error('Error: awsAccManClass error while checking for AWS IAM credentials.', err);
