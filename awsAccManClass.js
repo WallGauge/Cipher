@@ -55,7 +55,8 @@ class awsAccMan extends EventEmitter {
             })
             .catch((err)=>{
                 console.error('Error verifying credentials, err.code = ' + err.code + ' details follow:', err)
-                if(err.code == 'NetworkingError' && this._retryOnNetworkError == true){
+                // if(err.code == 'NetworkingError' && this._retryOnNetworkError == true){
+                if(err.retryable == true && this._retryOnNetworkError == true){
                     logit('class will retry to access Amazon servers in '+ awsAccManRetryInMinutes + ' minutes...')
                     setTimeout(()=>{
                         logit('Waited ' + awsAccManRetryInMinutes + ' minutes, time to retry and see if we can access Amazon servers.');
