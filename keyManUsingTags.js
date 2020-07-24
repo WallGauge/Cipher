@@ -35,12 +35,10 @@ class keyManager extends EventEmitter {
         this._region = awsRegion;
         this._cmkId = null;
         this._masterKeyObject = {};
-
-        logit('Setting up awsAccMan aka keyManagerClass... credentials location = ' + this._credentialsFile);
+        logit('Logging into AWS with awsAccMan to get this GDT\'s encryption key ID')
         this.awsAccMan = new AwsAccMan(this._credentialsFile);
-
         this.awsAccMan.on('iamReady', () => {
-           logit('AWS IAM user logged in and looking for encryption key ID...');
+            logit('AWS IAM user logged in and looking for encryption key ID...');
             if (this.awsAccMan.userTags[this._tagID] != undefined) {
                 this._cmkId = this.awsAccMan.userTags[this._tagID];
                 logit('We have a key ID from the ' + this._tagID + ' AWS IAM Tag.')
@@ -110,6 +108,9 @@ class keyManager extends EventEmitter {
                 this.emit('Error', 'Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.', new Error('Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.'));
                 // new Error('Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.'
             };
+        });
+        this.awsAccMan.on('iamError', (err) => {
+            this.emit('Error', 'Error from awsAccMan class: ' + err, err);
         });
     };
 
