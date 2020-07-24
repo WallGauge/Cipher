@@ -39,7 +39,13 @@ class keyManager extends EventEmitter {
         this.awsAccMan = new AwsAccMan(this._credentialsFile);
 
         this.awsAccMan.on('iamReady', ()=>{
-            console.log('The key ID found for key ID ' + this._tagID + ' = ' +this.awsAccMan.userTags[this._tagID]);
+            this._cmkId = this.awsAccMan.userTags[this._tagID];
+            if (this._cmkId != null && this._cmkId != undefined){
+                logit('We have a key ID from the ' + this._tagID + ' AWS IAM Tag.')
+            } else {
+                logit('Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.')
+            }
+
         });
 
 
