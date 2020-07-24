@@ -40,8 +40,9 @@ class keyManager extends EventEmitter {
         this.awsAccMan = new AwsAccMan(this._credentialsFile);
 
         this.awsAccMan.on('iamReady', () => {
-            this._cmkId = this.awsAccMan.userTags[this._tagID];
-            if (this._cmkId != null && this._cmkId != undefined) {
+           logit('aws Account Man is ready checking IAM Tag for encryption key ID...');
+            if (this.awsAccMan.userTags[this._tagID] != undefined) {
+                this._cmkId = this.awsAccMan.userTags[this._tagID];
                 logit('We have a key ID from the ' + this._tagID + ' AWS IAM Tag.')
                 this._masterKeyParams = {
                     Description: 'GDT',
