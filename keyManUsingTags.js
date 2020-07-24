@@ -34,86 +34,81 @@ class keyManager extends EventEmitter {
         this._cmkFilePath = cmkFilePath;
         this._region = awsRegion;
         this._cmkId = null;
-        
+        this._masterKeyObject = {};
+
         logit('Setting up awsAccMan aka keyManagerClass... credentials location = ' + this._credentialsFile);
         this.awsAccMan = new AwsAccMan(this._credentialsFile);
 
-        this.awsAccMan.on('iamReady', ()=>{
+        this.awsAccMan.on('iamReady', () => {
             this._cmkId = this.awsAccMan.userTags[this._tagID];
-            if (this._cmkId != null && this._cmkId != undefined){
+            if (this._cmkId != null && this._cmkId != undefined) {
                 logit('We have a key ID from the ' + this._tagID + ' AWS IAM Tag.')
+                this._masterKeyParams = {
+                    Description: 'GDT',
+                    KeyUsage: 'ENCRYPT_DECRYPT',
+                    Origin: 'AWS_KMS'
+                };
+                creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
+                checkForCredentials(this._credentialsFile)
+                    .then(() => {
+                        logit('Setting up AWS KMS...');
+                        kms = new AWS.KMS({
+                            accessKeyId: creds.accessKeyId,            //credentials for your IAM user
+                            secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
+                            region: this._region
+                        });
+                        if (fs.existsSync(this._cmkFilePath)) {
+                            this._masterKeyObject = JSON.parse(fs.readFileSync(this._cmkFilePath));
+                            var cmkList = Object.keys(this._masterKeyObject);
+                            cmkList.forEach((keyIdFromFile) => {
+                                var buf = Buffer.from(this._masterKeyObject[keyIdFromFile]);
+                                decryptKey(buf)
+                                    .then((key) => {
+                                        this.dataEncryptionKeyObj[keyIdFromFile] = key;
+                                        this.emit('keyIsReady', { [keyIdFromFile]: key });
+                                    })
+                                    .catch((err) => {
+                                        console.error('Error key Decryption Error form keyManager for cmkID = ' + keyIdFromFile);
+                                        this.emit('Error', 'Key Decryption Error for keyID = ' + keyIdFromFile, err);
+                                    })
+                            });
+                            if (cmkList.indexOf(this._cmkId) == -1) {
+                                logit('CMK ID ' + this._cmkId + ', missing, creating a new one.');
+                                generateDataKey(this._cmkId)
+                                    .then((data) => {
+                                        this.dataEncryptionKeyObj[this._cmkId] = data.Plaintext;
+                                        logit('saving encrypted copy of data encryption key...');
+                                        this._saveItem({ [this._cmkId]: data.CiphertextBlob });
+                                        this.emit('keyIsReady', { [this._cmkId]: data.Plaintext });
+                                    })
+                                    .catch((err) => {
+                                        console.error('Error Key Decryption Error or Issue creating new data encryption Key for key ID ' + this._cmkId);
+                                        this.emit('Error', 'Key Decryption Error or Issue creating new data encryption Key for key ID ' + this._cmkId, err);
+                                    });
+                            };
+                        } else {
+                            logit('Data encryption Key File not found! Creating new File...');
+                            generateDataKey(this._cmkId)
+                                .then((data) => {
+                                    this.dataEncryptionKeyObj[this._cmkId] = data.Plaintext;
+                                    logit('saving encrypted copy of data encryption key...');
+                                    this._saveItem({ [this._cmkId]: data.CiphertextBlob });
+                                    this.emit('keyIsReady', { [this._cmkId]: data.Plaintext });
+                                })
+                                .catch((err) => {
+                                    console.error('Error Key Decryption Error or Issue creating new data encryption Key for key ID ' + this._cmkId);
+                                    this.emit('Error', 'Key Decryption Error or Issue creating new data encryption Key for key ID ' + this._cmkId, err);
+                                });
+                        };
+                    })
+                    .catch((err) => {
+                        console.error('Error: keyMangerClass error while checking for AWS IAM credentials.', err);
+                    });
             } else {
                 logit('Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.')
-            }
-
+                throw (new Error('Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.'));
+            };
         });
-
-
-        
-
-
-        // this._masterKeyObject = {};
-        // this._masterKeyParams = {
-        //     Description: 'GDT',
-        //     KeyUsage: 'ENCRYPT_DECRYPT',
-        //     Origin: 'AWS_KMS'
-        // };
-        // creds = new AWS.FileSystemCredentials(this._credentialsFile);  //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/FileSystemCredentials.html
-        // checkForCredentials(this._credentialsFile)
-        //     .then(() => {
-        //         logit('Setting up AWS KMS...');
-        //         kms = new AWS.KMS({
-        //             accessKeyId: creds.accessKeyId,            //credentials for your IAM user
-        //             secretAccessKey: creds.secretAccessKey,    //credentials for your IAM user
-        //             region: this._region
-        //         });
-        //         if (fs.existsSync(this._cmkFilePath)) {
-        //             this._masterKeyObject = JSON.parse(fs.readFileSync(this._cmkFilePath));
-        //             var cmkList = Object.keys(this._masterKeyObject);
-        //             cmkList.forEach((keyIdFromFile) => {
-        //                 var buf = Buffer.from(this._masterKeyObject[keyIdFromFile]);
-        //                 decryptKey(buf)
-        //                     .then((key) => {
-        //                         this.dataEncryptionKeyObj[keyIdFromFile] = key;
-        //                         this.emit('keyIsReady', { [keyIdFromFile]: key });
-        //                     })
-        //                     .catch((err) => {
-        //                         console.error('Error key Decryption Error form keyManager for cmkID = ' + keyIdFromFile);
-        //                         this.emit('Error', 'Key Decryption Error for keyID = ' + keyIdFromFile, err);
-        //                     })
-        //             });
-        //             if (cmkList.indexOf(this._cmkId) == -1) {
-        //                 logit('CMK ID ' + this._cmkId + ', missing, creating a new one.');
-        //                 generateDataKey(this._cmkId)
-        //                     .then((data) => {
-        //                         this.dataEncryptionKeyObj[this._cmkId] = data.Plaintext;
-        //                         logit('saving encrypted copy of data encryption key...');
-        //                         this._saveItem({ [this._cmkId]: data.CiphertextBlob });
-        //                         this.emit('keyIsReady', { [this._cmkId]: data.Plaintext });
-        //                     })
-        //                     .catch((err) => {
-        //                         console.error('Error Key Decryption Error or Issue creating new data encryption Key for key ID ' + this._cmkId);
-        //                         this.emit('Error', 'Key Decryption Error or Issue creating new data encryption Key for key ID ' + this._cmkId, err);
-        //                     });
-        //             };
-        //         } else {
-        //             logit('Data encryption Key File not found! Creating new File...');
-        //             generateDataKey(this._cmkId)
-        //                 .then((data) => {
-        //                     this.dataEncryptionKeyObj[this._cmkId] = data.Plaintext;
-        //                     logit('saving encrypted copy of data encryption key...');
-        //                     this._saveItem({ [this._cmkId]: data.CiphertextBlob });
-        //                     this.emit('keyIsReady', { [this._cmkId]: data.Plaintext });
-        //                 })
-        //                 .catch((err) => {
-        //                     console.error('Error Key Decryption Error or Issue creating new data encryption Key for key ID ' + this._cmkId);
-        //                     this.emit('Error', 'Key Decryption Error or Issue creating new data encryption Key for key ID ' + this._cmkId, err);
-        //                 });
-        //         };
-        //     })
-        //     .catch((err) => {
-        //         console.error('Error: keyMangerClass error while checking for AWS IAM credentials.', err);
-        //     });
     };
 
     /** Saves custom config items to the config file located in _masterKeyID Path 
