@@ -39,7 +39,7 @@ class keyManager extends EventEmitter {
         this.awsAccMan = new AwsAccMan(this._credentialsFile);
 
         this.awsAccMan.on('iamReady', ()=>{
-            console.log('The key ID found for key ID ' + this._tagID + ' = ' + awsAccMan.userTags[this._tagID]);
+            console.log('The key ID found for key ID ' + this._tagID + ' = ' +this.awsAccMan.userTags[this._tagID]);
         });
 
 
