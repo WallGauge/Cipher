@@ -14,8 +14,8 @@ class keyManager extends EventEmitter {
      * This class looks for an encrypted “data encryption key” in a local file named cmk.json (default name).  
      * If the cmk.json file is missing the class will use AWS to create a new data encryption key for each customer master key passed.  
      * An encrypted version of the new data encryption key and the customer master key ID will be stored in the cmk.json file.  
-     * The CMK ID is used by AWS to decrypt the data encryption key and it is available in the this.dataEncryptionKey property. 
-     * The this.dataEncryptionKey key should never be stored or saved in the file system!
+     * The CMK ID is used by AWS to decrypt the data encryption key and it is available in the this.dataEncryptionKeyObj property. 
+     * The this.dataEncryptionKeyObj key should never be stored or saved in the file system!
      * 
      * Emits:
      *      this.emit('keyIsReady', this.dataEncryptionKeyObj);  When a data encryption key has been decrypted and ready.
