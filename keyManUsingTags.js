@@ -35,7 +35,9 @@ class keyManager extends EventEmitter {
         this._region = awsRegion;
         this._cmkId = null;
         
+        logit('Setting up awsAccMan aka keyManagerClass... credentials location = ' + this._credentialsFile);
         this.awsAccMan = new AwsAccMan(this._credentialsFile);
+        
         this.awsAccMan.on('iamReady', ()=>{
             console.log('The key ID found for key ID ' + this._tagID + ' = ' + awsAccMan.userTags[this._tagID]);
         });
