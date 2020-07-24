@@ -106,7 +106,7 @@ class keyManager extends EventEmitter {
                     });
             } else {
                 logit('Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.')
-                throw (new Error('Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.'));
+                this.emit('Error', 'Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.', new Error('Error: Key ID missing.  ASW IAM Tag named ' + this._tagID + ' not found.'));
             };
         });
     };
