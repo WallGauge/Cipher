@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
 const fs = require("fs");
 const EventEmitter = require('events');
-const AwsAccMan = require("./keyManagerClass");
+const AwsAccMan = require("./awsAccManClass");
 
 const logitPrefix = 'cipher.keyManUsingTags | ';
 var creds = {};
@@ -37,7 +37,7 @@ class keyManager extends EventEmitter {
         
         logit('Setting up awsAccMan aka keyManagerClass... credentials location = ' + this._credentialsFile);
         this.awsAccMan = new AwsAccMan(this._credentialsFile);
-        
+
         this.awsAccMan.on('iamReady', ()=>{
             console.log('The key ID found for key ID ' + this._tagID + ' = ' + awsAccMan.userTags[this._tagID]);
         });
