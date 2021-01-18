@@ -1,6 +1,6 @@
 {
   "name": "cipher",
-  "version": "3.7.1",
+  "version": "3.7.2",
   "description": "",
   "main": "cipherClass.js",
   "repository": {
@@ -10,6 +10,6 @@
   "author": "John Rucker",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.528.0"
+    "aws-sdk": "^2.828.0"
   }
 }
